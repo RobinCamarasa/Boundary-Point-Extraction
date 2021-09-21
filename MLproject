@@ -1,0 +1,10 @@
+name: Demonstration
+
+conda_env: conda.yaml
+
+entry_points:
+  test_env:
+    parameters:
+      max-epoch: {type: int, default: 5}
+    command: "export PYTHONPATH=$(pwd) && python scripts/example/main.py --max-epoch {max-epoch}"
+
