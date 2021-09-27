@@ -23,7 +23,6 @@ $ pip install -r requirements.txt
 
 ## Structure
 
-- `.gitlab-ci.yml`: File that set up of the continous integration. It is a simplified version of the [vanilla python gitlab-ci setup file][gitlab-ci]
 - `CONTRIBUTING.md`: File that set up of the continous integration
 - `MLproject`: File that set up MLexperiments
 - `LICENSE`: File that contains the legal license
@@ -57,7 +56,7 @@ $ make preprocess
 ### Run tests
 
 - Run the tests in your environment
-```
+```shell
 $ make test
 ```
 
