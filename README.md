@@ -47,11 +47,11 @@ $ make data_zip ZIP_PATH="[your absolute path to the zip archive]"
 $ make data_repo REPO_PATH="[your absolute path to inflated folder]"
 ```
 
-### Obtain data
+### Preprocess data
 
 - Once you obtained the data you can preprocess them with the command
 ```shell
-$make preprocess
+$ make preprocess
 ```
 
 ### Run tests
