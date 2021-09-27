@@ -4,3 +4,4 @@ monai==0.6.0
 torch==1.9.1
 pytorch-lightning==1.4.7
 torchvision==0.10.1
+pydicom==2.2.1

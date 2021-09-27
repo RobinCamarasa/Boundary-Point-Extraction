@@ -38,22 +38,27 @@ $ pip install -r requirements.txt
 You can download the data as a zip archive by joining the [Carotid Artery Vessel Wall Segmentation Challenge](https://vessel-wall-segmentation.grand-challenge.org/Index/). Once downloaded, you can place get the data in the right folder by using:
 
 - if you have the zip archive with the data:
-
 ```shell
 $ make data_zip ZIP_PATH="[your absolute path to the zip archive]"
 ```
 
 - if you have already inflated the zip archive with the data:
-
 ```shell
-$ make data_repo ZIP_PATH="[your absolute path to inflated folder]"
-    ```
+$ make data_repo REPO_PATH="[your absolute path to inflated folder]"
+```
+
+### Obtain data
+
+- Once you obtained the data you can preprocess them with the command
+```shell
+$make preprocess
+```
 
 ### Run tests
 
 - Run the tests in your environment
 ```
-$ python -m pytest test
+$ make test
 ```
 
 ### Launch experiments
