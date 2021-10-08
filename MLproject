@@ -1,10 +1,8 @@
-name: Demonstration
+name: diameter_learning
 
 conda_env: conda.yaml
 
 entry_points:
-  test_env:
-    parameters:
-      max-epoch: {type: int, default: 5}
-    command: "export PYTHONPATH=$(pwd) && python scripts/example/main.py --max-epoch {max-epoch}"
 
+  stats:
+    command: "export PYTHONPATH=\"$(pwd)\" && python scripts/statistics/__main__.py"

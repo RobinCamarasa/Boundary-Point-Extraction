@@ -1,4 +1,4 @@
-.PHONY: data_unzip, data_repo, test, preprocess
+.PHONY: data_unzip, data_repo, test, preprocess, stats, delete_experiements
 
 PP = PYTHONPATH="$(shell pwd)"
 
@@ -19,3 +19,12 @@ test:
 
 preprocess: data/care_ii_challenge/careIIChallenge
 	@$(PP) python scripts/preprocess
+
+stats: data/care_ii_challenge/careIIChallenge
+	@mlflow run --entry-point stats --experiment-name stats ./
+
+delete_experiments: mlruns
+	@mlflow gc
+
+show_experiments: mlruns
+	@mlflow ui

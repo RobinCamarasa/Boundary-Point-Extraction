@@ -6,6 +6,7 @@ from itertools import product
 from typing import List, Mapping, Tuple, Callable
 from pathlib import Path
 import numpy as np
+import pydicom
 from diameter_learning.types import SliceAnnotation
 
 
@@ -17,12 +18,13 @@ class Patient():
     """
     alpha: float = (512/720)
     y_shift: int = 310
-    cascade_x_transform: Callable = lambda x: Patient.alpha * x
-    cascade_x_inversed_transform: Callable = lambda x: (1/Patient.alpha) * x
-    cascade_y_transform: Callable = lambda y: Patient.alpha *\
-        (y + Patient.y_shift)
-    cascade_y_inversed_transform: Callable = lambda y: (1/Patient.alpha) *\
-        y - Patient.y_shift
+    cascade_x_transform: Callable = lambda x, alpha: alpha * x
+    cascade_x_inversed_transform: Callable = lambda x, alpha: (1/alpha) * x
+    cascade_y_transform: Callable = lambda y, alpha, y_shift: alpha *\
+        (y + y_shift)
+    cascade_y_inversed_transform: Callable = lambda y, alpha, y_shift: (
+            1/alpha
+        ) * y - y_shift
 
     def __init__(self, patient_folder: str) -> None:
         self.patient_folder: Path = patient_folder
@@ -107,6 +109,13 @@ class Patient():
             ).getroot().findall(
                 'QVAS_Image'
                 )[slice_id - 1].findall('QVAS_Contour')
+        dicom_values: pydicom.dataset.FileDataset = pydicom.dcmread(
+            self.slices[slice_id]
+            )
+        nrows, ncols = dicom_values['Rows'].value,\
+            dicom_values['Columns'].value
+        alpha: float = 512/ncols
+        y_shift: int = int((ncols - nrows) / 2)
 
         # Process and store contoursthe contours
         for contour in xml_contours:
@@ -124,10 +133,10 @@ class Patient():
                 x_coor: float = float(contour_point.get('x'))
                 y_coor: float = float(contour_point.get('y'))
                 x_processed: float = Patient.cascade_x_inversed_transform(
-                    x_coor
+                    x_coor, alpha
                     )
                 y_processed: float = Patient.cascade_y_inversed_transform(
-                    y_coor
+                    y_coor, alpha, y_shift
                     )
                 slice_annotation[contour_type]['raw'].append((x_coor, y_coor))
                 slice_annotation[contour_type]['processed'].append(

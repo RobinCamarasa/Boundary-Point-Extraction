@@ -63,12 +63,12 @@ $ make test
 ### Launch experiments
 
 - Launch an mlflow experiment with conda
-```
+```shell
 $ mlflow run ./ -e [entry-point]
 ```
 
 - Launch an mlflow experiment without conda
-```
+```shell
 $ mlflow run ./ -e [entry-point] --no-conda
 ```
 
