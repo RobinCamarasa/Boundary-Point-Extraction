@@ -3,6 +3,5 @@ name: diameter_learning
 conda_env: conda.yaml
 
 entry_points:
-
   stats:
     command: "export PYTHONPATH=\"$(pwd)\" && python scripts/statistics/__main__.py"

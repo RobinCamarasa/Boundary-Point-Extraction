@@ -1,4 +1,4 @@
-.PHONY: data_unzip, data_repo, test, preprocess, stats, delete_experiements
+.PHONY: data_unzip, data_repo, tests, preprocess, stats, delete_experiements
 
 PP = PYTHONPATH="$(shell pwd)"
 
@@ -14,8 +14,8 @@ data_repo:
 	@mkdir -p "data/care_ii_challenge/"
 	@ln -s "$${REPO_PATH}" "data/care_ii_challenge/careIIChallenge"
 
-test:
-	@python -m pytest -s test
+tests: data/care_ii_challenge/careIIChallenge
+	@$(PP) python -m pytest test/
 
 preprocess: data/care_ii_challenge/careIIChallenge
 	@$(PP) python scripts/preprocess
