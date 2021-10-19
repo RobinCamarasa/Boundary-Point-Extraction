@@ -36,8 +36,8 @@ class LoadCarotidChallengeSegmentation(MapTransform):
         # Fill contour
         filled_contour: np.array = np.zeros(data[self.image_key].shape)
         rows, columns = polygon(
-                contour[:, 1],
-                contour[:, 0]
+                contour[:, 0],
+                contour[:, 1]
             )
         filled_contour[0, rows, columns] = 1
         data[self.keys[0]] = filled_contour
@@ -102,7 +102,28 @@ class CropImageCarotidChallenge(MapTransform):
         """
         for key in self.keys:
             if 'right' in data[self.annotation_key]:
-                data[key] = data[key][:, :, :data[key].shape[2] // 2]
+                data[key] = data[key][:, :data[key].shape[1] // 2]
             else:
-                data[key] = data[key][:, :, data[key].shape[2] // 2:]
+                data[key] = data[key][:, data[key].shape[1] // 2:]
+        return data
+
+
+class PopKeysd(MapTransform):
+    """Pop keys in the transform toolchain
+
+    :param keys: Keys to pop
+    """
+    def __init__(
+            self, keys: Union[str, Sequence[str]]
+    ):
+        super().__init__(keys)
+
+    def __call__(self, data: dict) -> dict:
+        """Method called to pop keys
+
+        :param data: Data to pop keys to
+        :return: Updated dictionnary
+        """
+        for key in self.keys:
+            data.pop(key)
         return data

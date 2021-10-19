@@ -1,6 +1,6 @@
 pytest==6.2.5
 mlflow==1.20.2
-monai==0.6.0
+monai==0.7.0
 torch==1.9.1
 pytorch-lightning==1.4.7
 torchvision==0.10.1

@@ -2,7 +2,7 @@
 """
 from .dictionnary import (
     LoadCarotidChallengeSegmentation, LoadCarotidChallengeAnnotations,
-    CropImageCarotidChallenge
+    CropImageCarotidChallenge, PopKeysd
     )
 
 from .array import (

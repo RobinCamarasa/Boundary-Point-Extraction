@@ -1,13 +1,15 @@
 """Test `diameter_learning.transforms.dictionnary` classes"""
 import shutil
 import matplotlib.pyplot as plt
+import numpy as np
 from monai.transforms import (
-    Compose, LoadImaged, SpatialPadd
+    Compose, LoadImaged, SpatialPadd,
+    AsChannelFirstd
     )
 from diameter_learning.apps import CarotidChallengeDataset
 from diameter_learning.transforms import (
     LoadCarotidChallengeSegmentation, LoadCarotidChallengeAnnotations,
-    CropImageCarotidChallenge
+    CropImageCarotidChallenge, PopKeysd
     )
 from diameter_learning.settings import DATA_PRE_PATH, TEST_OUTPUT_PATH
 
@@ -22,21 +24,21 @@ def test_load_carotid_challenge_segmentation():
         transforms=Compose(
             [
                 LoadImaged("image"),
+                AsChannelFirstd("image"),
                 LoadCarotidChallengeAnnotations("gt"),
                 LoadCarotidChallengeSegmentation()
                 ]
             ),
         seed=0,
-        folds=[0, 1],
+        folds=[0, 1, 2, 3, 4],
         num_fold=5,
         cache_rate=0
         )
-
     for i in range(5):
         element = carotid_challenge_dataset[i]
         # Check output
         assert 'gt_lumen_processed_contour' in element.keys()
-        assert element['gt_lumen_processed_contour'].shape == (1, 160, 640)
+        assert element['gt_lumen_processed_contour'].shape == (1, 640, 160)
 
         # Visual assessment
         plt.clf()
@@ -44,10 +46,10 @@ def test_load_carotid_challenge_segmentation():
         ax = ax.ravel()
         ax[0].axis('off')
         ax[1].axis('off')
-        ax[0].imshow(element['image'][0, :], cmap='gray')
-        ax[1].imshow(element['image'][0, :], cmap='gray')
+        ax[0].imshow(np.transpose(element['image'][0, :]), cmap='gray')
+        ax[1].imshow(np.transpose(element['image'][0, :]), cmap='gray')
         ax[1].imshow(
-            element['gt_lumen_processed_contour'][0, :],
+            np.transpose(element['gt_lumen_processed_contour'][0, :]),
             cmap='Reds', alpha=0.3
             )
         plt.savefig(
@@ -73,7 +75,6 @@ def test_load_carotid_challenge_annotations():
         num_fold=5,
         cache_rate=0
         )
-
     for i in range(5):
         element = carotid_challenge_dataset[i]
         assert set(element.keys()) == {
@@ -96,11 +97,12 @@ def test_crop_image_carotid_challenge():
         transforms=Compose(
             [
                 LoadImaged("image"),
+                AsChannelFirstd("image"),
                 LoadCarotidChallengeAnnotations("gt"),
                 LoadCarotidChallengeSegmentation(),
                 SpatialPadd(
                     ["image", "gt_lumen_processed_contour"],
-                    (160, 768)
+                    (768, 160)
                     ),
                 CropImageCarotidChallenge(
                     ["image", "gt_lumen_processed_contour"]
@@ -112,11 +114,10 @@ def test_crop_image_carotid_challenge():
         num_fold=5,
         cache_rate=0
         )
-
     for i in range(5):
         element = carotid_challenge_dataset[i]
-        assert element['gt_lumen_processed_contour'].shape == (1, 160, 384)
-        assert element['image'].shape == (1, 160, 384)
+        assert element['gt_lumen_processed_contour'].shape == (1, 384, 160)
+        assert element['image'].shape == (1, 384, 160)
 
         # Visual assessment
         plt.clf()
@@ -124,12 +125,33 @@ def test_crop_image_carotid_challenge():
         ax = ax.ravel()
         ax[0].axis('off')
         ax[1].axis('off')
-        ax[0].imshow(element['image'][0, :], cmap='gray')
-        ax[1].imshow(element['image'][0, :], cmap='gray')
+        ax[0].imshow(np.transpose(element['image'][0, :]), cmap='gray')
+        ax[1].imshow(np.transpose(element['image'][0, :]), cmap='gray')
         ax[1].imshow(
-            element['gt_lumen_processed_contour'][0, :],
-            cmap='Reds', alpha=0.3
-            )
+                np.transpose(element['gt_lumen_processed_contour'][0, :]),
+                cmap='Reds', alpha=0.3
+                )
         plt.savefig(
             TEST_OUTPUT_PATH / f'contour_{i}.png', dpi=300
             )
+
+
+def test_pop_keys_d():
+    """Test PopKeysd class"""
+    carotid_challenge_dataset = CarotidChallengeDataset(
+        root_dir=DATA_PRE_PATH,
+        annotations=('internal_right', 'internal_left'),
+        transforms=Compose(
+            [
+                LoadImaged("image"),
+                PopKeysd("image_meta_dict"),
+                ]
+            ),
+        seed=0,
+        folds=[0, 1],
+        num_fold=5,
+        cache_rate=0
+        )
+    for i in range(5):
+        element = carotid_challenge_dataset[i]
+        assert 'image_meta_dict' not in element.keys()

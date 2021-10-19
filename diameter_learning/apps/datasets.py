@@ -46,7 +46,6 @@ class CarotidChallengeDataset(CacheDataset):
                 "image"
                 )
         data = self._generate_dataset()
-
         super().__init__(data, transforms, cache_rate=cache_rate)
 
     def _generate_dataset(self) -> List[Mapping[str, str]]:
