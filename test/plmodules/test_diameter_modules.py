@@ -2,10 +2,13 @@
 """
 import argparse
 from torch.utils.data import DataLoader
-from diameter_learning.plmodules import CarotidArteryChallengeDiameterModule
+from diameter_learning.plmodules import (
+    CarotidArteryChallengeDiameterModule,
+    CarotidArteryChallengeDiameterResNet
+    )
 
 
-def test_forward():
+def test_diameter_module_forward():
     """Test forward method"""
     parser = argparse.ArgumentParser(
         description='Process hyperparameters'
@@ -46,7 +49,7 @@ def test_forward():
     assert diameter.shape == (5, 1, 1)
 
 
-def test_train_dataloader():
+def test_diameter_module_train_dataloader():
     """Test train dataloader method"""
     parser = argparse.ArgumentParser(
         description='Process hyperparameters'
@@ -88,7 +91,7 @@ def test_train_dataloader():
         assert element['gt_lumen_processed_contour'].shape == (5, 1, 384, 160)
 
 
-def test_val_dataloader():
+def test_diameter_module_val_dataloader():
     """Test val dataloader method"""
     parser = argparse.ArgumentParser(
             description='Process hyperparameters'
@@ -130,7 +133,7 @@ def test_val_dataloader():
         assert element['gt_lumen_processed_contour'].shape == (1, 1, 384, 160)
 
 
-def test_test_dataloader():
+def test_diameter_module_test_dataloader():
     """Test test_dataloader method"""
     parser = argparse.ArgumentParser(
         description='Process hyperparameters'
@@ -172,7 +175,7 @@ def test_test_dataloader():
         assert element['gt_lumen_processed_contour'].shape == (1, 1, 384, 160)
 
 
-def test_training_step():
+def test_diameter_module_training_step():
     """Test training_step method"""
     parser = argparse.ArgumentParser(
         description='Process hyperparameters'
@@ -210,7 +213,7 @@ def test_training_step():
     assert loss.shape == tuple()
 
 
-def test_validation_step():
+def test_diameter_module_validation_step():
     """Test validation_step method"""
     parser = argparse.ArgumentParser(
         description='Process hyperparameters'
@@ -248,7 +251,7 @@ def test_validation_step():
     assert loss.shape == tuple()
 
 
-def test_test_step():
+def test_diameter_module_test_step():
     """Test test_step method"""
     parser = argparse.ArgumentParser(
         description='Process hyperparameters'
@@ -286,7 +289,7 @@ def test_test_step():
     assert loss.shape == tuple()
 
 
-def test_compute_losses():
+def test_diameter_module_compute_losses():
     """Test compute_losses"""
     parser = argparse.ArgumentParser(
             description='Process hyperparameters'
@@ -324,3 +327,140 @@ def test_compute_losses():
     assert center_shift_loss.shape == tuple()
     assert consistency_loss.shape == tuple()
     assert total_loss.shape == tuple()
+
+
+def test_resnet_forward():
+    """Test CarotidArteryChallengeDiameterResNet forward"""
+    parser = argparse.ArgumentParser(
+            description='Process hyperparameters'
+        )
+    parser = CarotidArteryChallengeDiameterResNet.add_model_specific_args(
+        parser
+        )
+    parser.set_defaults(
+        num_fold=5,
+        seed=5,
+        lr=(10**-4),
+        image_dimension_x=768,
+        image_dimension_y=160,
+        training_cache_rate=0,
+        test_folds='[4]',
+        validation_folds='[3]',
+        batch_size=5,
+        model_sigma=0.15,
+        model_nb_radiuses=24,
+        model_moments='[0, 1]',
+        loss_consistency_weighting=1,
+        loss_center_shift_weighting=1,
+        )
+    hparams = parser.parse_args([])
+
+    # Create module
+    module: CarotidArteryChallengeDiameterResNet \
+        = CarotidArteryChallengeDiameterResNet(
+            hparams
+        )
+    example_batch = next(iter(module.train_dataloader()))
+    output = module.forward(example_batch)
+    assert output.shape == example_batch[
+        'gt_lumen_processed_diameter'
+        ].shape
+
+
+def test_resnet_training_step():
+    """Test training_step method"""
+    parser = argparse.ArgumentParser(
+        description='Process hyperparameters'
+        )
+    parser = CarotidArteryChallengeDiameterResNet.add_model_specific_args(
+        parser
+        )
+    parser.set_defaults(
+        num_fold=5,
+        seed=5,
+        lr=(10**-4),
+        image_dimension_x=768,
+        image_dimension_y=160,
+        training_cache_rate=0,
+        test_folds='[4]',
+        validation_folds='[3]',
+        batch_size=5,
+        )
+    hparams = parser.parse_args([])
+
+    # Create module
+    module: CarotidArteryChallengeDiameterResNet \
+        = CarotidArteryChallengeDiameterResNet(
+            hparams
+        )
+    module.log = lambda x, y, on_epoch: None
+
+    example_batch = next(iter(module.train_dataloader()))
+    loss = module.training_step(example_batch, 0)
+    assert loss.shape == tuple()
+
+
+def test_resnet_validation_step():
+    """Test validation_step method"""
+    parser = argparse.ArgumentParser(
+        description='Process hyperparameters'
+        )
+    parser = CarotidArteryChallengeDiameterResNet.add_model_specific_args(
+        parser
+        )
+    parser.set_defaults(
+        num_fold=5,
+        seed=5,
+        lr=(10**-4),
+        image_dimension_x=768,
+        image_dimension_y=160,
+        training_cache_rate=0,
+        test_folds='[4]',
+        validation_folds='[3]',
+        batch_size=5,
+        )
+    hparams = parser.parse_args([])
+
+    # Create module
+    module: CarotidArteryChallengeDiameterResNet \
+        = CarotidArteryChallengeDiameterResNet(
+            hparams
+        )
+    module.log = lambda x, y, on_epoch: None
+
+    example_batch = next(iter(module.val_dataloader()))
+    loss = module.validation_step(example_batch, 0)
+    assert loss.shape == tuple()
+
+
+def test_resnet_test_step():
+    """Test test_step method"""
+    parser = argparse.ArgumentParser(
+        description='Process hyperparameters'
+        )
+    parser = CarotidArteryChallengeDiameterResNet.add_model_specific_args(
+        parser
+        )
+    parser.set_defaults(
+        num_fold=5,
+        seed=5,
+        lr=(10**-4),
+        image_dimension_x=768,
+        image_dimension_y=160,
+        training_cache_rate=0,
+        test_folds='[4]',
+        validation_folds='[3]',
+        batch_size=5,
+        )
+    hparams = parser.parse_args([])
+
+    # Create module
+    module: CarotidArteryChallengeDiameterResNet \
+        = CarotidArteryChallengeDiameterResNet(
+            hparams
+        )
+    module.log = lambda x, y, on_epoch: None
+
+    example_batch = next(iter(module.test_dataloader()))
+    loss = module.test_step(example_batch, 0)
+    assert loss.shape == tuple()

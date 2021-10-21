@@ -94,11 +94,11 @@ class CropImageCarotidChallenge(MapTransform):
             self, keys: Union[str, Sequence[str]],
             landmark_keys: str = ['gt_lumen_processed_landmarks'],
             annotation_key: str = 'annotation_type',
-            meta_key: str = 'image_meta_dict'
+            transform_key: str = 'image_transforms'
     ):
         super().__init__(keys)
         self.annotation_key = annotation_key
-        self.meta_key = meta_key
+        self.transform_key = transform_key
         self.landmark_keys = landmark_keys
 
     def __call__(self, data: dict) -> dict:
@@ -107,7 +107,9 @@ class CropImageCarotidChallenge(MapTransform):
         :param data: Data before LoadCarotidChallengeSegmentation processing
         :return: Updated dictionnary
         """
-        initial_dimension = data[self.meta_key]['spatial_shape']
+        initial_dimension = list(
+            data[self.transform_key][0]['orig_size']
+            )
         dimension = data[self.keys[0]].shape
         for key in self.keys:
             if 'right' in data[self.annotation_key]:
