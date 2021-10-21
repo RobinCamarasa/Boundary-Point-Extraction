@@ -1,1 +1,6 @@
-from .dice import DiceCallback
+from .dice import (
+    DiceCallback
+    )
+from .haussdorf import (
+    HaussdorfCallback
+    )
