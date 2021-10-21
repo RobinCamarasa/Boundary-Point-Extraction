@@ -85,14 +85,20 @@ class CropImageCarotidChallenge(MapTransform):
     on if it is a left or a right annotation
 
     :param contour_key: Key of the contour class
+    :param landmark_keys: List of keys of the landmarks
     :param annotation: Key of that correspond to the annotation type
+    :param meta_key: Key of the meta data
     """
     def __init__(
             self, keys: Union[str, Sequence[str]],
-            annotation_key: str = 'annotation_type'
+            landmark_keys: str = ['gt_lumen_processed_landmarks'],
+            annotation_key: str = 'annotation_type',
+            meta_key: str = 'image_meta_dict'
     ):
         super().__init__(keys)
         self.annotation_key = annotation_key
+        self.meta_key = meta_key
+        self.landmark_keys = landmark_keys
 
     def __call__(self, data: dict) -> dict:
         """Method called to crop the correct part of the image
@@ -100,11 +106,17 @@ class CropImageCarotidChallenge(MapTransform):
         :param data: Data before LoadCarotidChallengeSegmentation processing
         :return: Updated dictionnary
         """
+        initial_x_dim = data[self.meta_key]['spatial_shape'].max()
+        x_dim = data[self.keys[0]].shape[1]
         for key in self.keys:
             if 'right' in data[self.annotation_key]:
-                data[key] = data[key][:, :data[key].shape[1] // 2]
+                data[key] = data[key][:, :x_dim // 2]
             else:
-                data[key] = data[key][:, data[key].shape[1] // 2:]
+                data[key] = data[key][:, x_dim // 2:]
+        for key in self.landmark_keys:
+            data[key][:, 0] += (x_dim - initial_x_dim) // 2
+            if 'left' in data[self.annotation_key]:
+                data[key][:, 0] -= x_dim // 2
         return data
 
 

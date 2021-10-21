@@ -131,6 +131,11 @@ def test_crop_image_carotid_challenge():
                 np.transpose(element['gt_lumen_processed_contour'][0, :]),
                 cmap='Reds', alpha=0.3
                 )
+        ax[1].scatter(
+                element['gt_lumen_processed_landmarks'][:, 0],
+                element['gt_lumen_processed_landmarks'][:, 1],
+                s=1
+            )
         plt.savefig(
             TEST_OUTPUT_PATH / f'contour_{i}.png', dpi=300
             )
