@@ -84,8 +84,9 @@ class CropImageCarotidChallenge(MapTransform):
     """Crop the left or the right part of the image depending
     on if it is a left or a right annotation
 
+    :param keys: Keys to crop
     :param contour_key: Key of the contour class
-    :param landmark_keys: List of keys of the landmarks
+    :param landmark_keys: List of keys of the landmarks to adjust
     :param annotation: Key of that correspond to the annotation type
     :param meta_key: Key of the meta data
     """
@@ -106,17 +107,20 @@ class CropImageCarotidChallenge(MapTransform):
         :param data: Data before LoadCarotidChallengeSegmentation processing
         :return: Updated dictionnary
         """
-        initial_x_dim = data[self.meta_key]['spatial_shape'].max()
-        x_dim = data[self.keys[0]].shape[1]
+        initial_dimension = data[self.meta_key]['spatial_shape']
+        dimension = data[self.keys[0]].shape
         for key in self.keys:
             if 'right' in data[self.annotation_key]:
-                data[key] = data[key][:, :x_dim // 2]
+                data[key] = data[key][:, :dimension[1] // 2]
             else:
-                data[key] = data[key][:, x_dim // 2:]
+                data[key] = data[key][:, dimension[1] // 2:]
         for key in self.landmark_keys:
-            data[key][:, 0] += (x_dim - initial_x_dim) // 2
+            # Apply the shift due to padding
+            data[key][:, 0] += (dimension[1] - initial_dimension[0]) // 2
+            data[key][:, 1] += (dimension[2] - initial_dimension[1]) // 2
+            # Apply the shift due to cropping
             if 'left' in data[self.annotation_key]:
-                data[key][:, 0] -= x_dim // 2
+                data[key][:, 0] -= dimension[1] // 2
         return data
 
 

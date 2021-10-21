@@ -114,8 +114,9 @@ def test_crop_image_carotid_challenge():
         num_fold=5,
         cache_rate=0
         )
-    for i in range(5):
+    for i in [0, 1, 2, 204, 205]:
         element = carotid_challenge_dataset[i]
+
         assert element['gt_lumen_processed_contour'].shape == (1, 384, 160)
         assert element['image'].shape == (1, 384, 160)
 
