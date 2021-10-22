@@ -100,7 +100,7 @@ def test_diameter_module_val_dataloader():
             parser
             )
     parser.set_defaults(
-        num_fold=5,
+        num_fold=20,
         seed=5,
         lr=(10**-4),
         image_dimension_x=768,

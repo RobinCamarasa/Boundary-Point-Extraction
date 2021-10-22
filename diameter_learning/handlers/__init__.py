@@ -1,10 +1,7 @@
-from .dice import (
-    DiceCallback
-    )
-from .haussdorf import (
-    HaussdorfCallback
-    )
 from .visualizers import (
     SegmentationVisualizer, ImageVisualizer,
     LandmarksVisualizer
+    )
+from .metrics import (
+    RelativeDiameterError, DiceCallback, HaussdorffCallback
     )

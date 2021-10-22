@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from monai.transforms import (
     Compose, LoadImaged, SpatialPadd,
-    AsChannelFirstd
+    AsChannelFirstd, AddChanneld
     )
 from diameter_learning.apps import CarotidChallengeDataset
 from diameter_learning.transforms import (
@@ -80,7 +80,7 @@ def test_load_carotid_challenge_annotations():
         assert set(element.keys()) == {
             'gt_lumen_processed_diameter', 'image_meta_dict', 'gt',
             'gt_lumen_processed_landmarks', 'image', 'annotation_type',
-            'gt_lumen_processed_contour'
+            'gt_lumen_processed_contour', 'slice_id'
             }
         assert element['gt_lumen_processed_landmarks'].shape == (2, 2)
         assert element['gt_lumen_processed_diameter'].shape == ()
@@ -96,9 +96,18 @@ def test_crop_image_carotid_challenge():
         annotations=('internal_right', 'internal_left'),
         transforms=Compose(
             [
+
                 LoadImaged("image"),
+                PopKeysd("image_meta_dict"),
                 AsChannelFirstd("image"),
                 LoadCarotidChallengeAnnotations("gt"),
+                AddChanneld(
+                    [
+                        "gt_lumen_processed_landmarks",
+                        "gt_lumen_processed_diameter"
+                        ],
+                    ),
+                AddChanneld(["gt_lumen_processed_diameter"]),
                 LoadCarotidChallengeSegmentation(),
                 SpatialPadd(
                     ["image", "gt_lumen_processed_contour"],

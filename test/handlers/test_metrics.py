@@ -1,4 +1,5 @@
-"""Test `diameter_learning.handlers.visualizers`"""
+"""Test `diameter_learning.handlers.dice`"""
+import json
 import argparse
 import shutil
 from pathlib import Path
@@ -7,21 +8,22 @@ from mlflow.store.tracking.file_store import FileStore
 import pytorch_lightning as pl
 from diameter_learning.plmodules import CarotidArteryChallengeDiameterModule
 from diameter_learning.handlers import (
-    SegmentationVisualizer, ImageVisualizer,
-    LandmarksVisualizer
+    RelativeDiameterError, DiceCallback, HaussdorffCallback
     )
 from diameter_learning.settings import TEST_OUTPUT_PATH
 
 
-def test_segmentation_visualizer():
-    """Test SegmentationVisualizer callback"""
+def test_relative_diameter_error_callback():
+    """Test DiceCallaback class
+    """
     shutil.rmtree(TEST_OUTPUT_PATH, ignore_errors=True)
     TEST_OUTPUT_PATH.mkdir(exist_ok=True)
 
     FileStore(root_directory = str(TEST_OUTPUT_PATH / 'mlruns'))
+
     mlflow.set_tracking_uri(
-        f'{TEST_OUTPUT_PATH.as_posix()}/mlruns/'
-    )
+        f"file://{str(TEST_OUTPUT_PATH / 'mlruns')}"
+        )
 
     # Set parameters
     parser = argparse.ArgumentParser(
@@ -57,37 +59,99 @@ def test_segmentation_visualizer():
         trainer = pl.Trainer(
             max_epochs=1, logger=False, gpus=1,
             callbacks=[
-                SegmentationVisualizer(
+                RelativeDiameterError(
                     artifact_path,
+                    gt_key='gt_lumen_processed_diameter',
+                    slice_id='slice_id',
                     forward_to_pred=lambda batch, module: module(
                         batch
-                        )[0][:, :, :, :, 0]
+                        )[3][:, :, 0]
                     )
                 ],
             default_root_dir=TEST_OUTPUT_PATH
         )
         mlflow.pytorch.autolog()
         trainer.test(model)
-        for i in range(5):
-            assert (
-                artifact_path / 'SegmentationVisualizer' /
-                f'test_pred_{i}.png'
-                ).exists()
-            assert (
-                artifact_path / 'SegmentationVisualizer' /
-                f'test_gt_{i}.png'
-                ).exists()
+        assert (
+            artifact_path / 'RelativeDiameterError' / 'result.csv'
+            ).exists()
     mlflow.end_run()
 
 
-def test_image_visualizer():
-    """Test ImageVisualizer callback"""
+def test_dice_callback():
+    """Test DiceCallaback class
+    """
     shutil.rmtree(TEST_OUTPUT_PATH, ignore_errors=True)
     TEST_OUTPUT_PATH.mkdir(exist_ok=True)
 
     FileStore(root_directory = str(TEST_OUTPUT_PATH / 'mlruns'))
     mlflow.set_tracking_uri(
-        f'{TEST_OUTPUT_PATH.as_posix()}/mlruns/'
+        f"file://{str(TEST_OUTPUT_PATH / 'mlruns')}"
+    )
+
+
+    # Set parameters
+    parser = argparse.ArgumentParser(
+        description='Process hyperparameters'
+        )
+    parser = CarotidArteryChallengeDiameterModule.add_model_specific_args(
+        parser
+        )
+    parser.set_defaults(
+        num_fold=20,
+        seed=5,
+        lr=(10**-4),
+        image_dimension_x=768,
+        image_dimension_y=160,
+        training_cache_rate=0,
+        test_folds='[4]',
+        validation_folds='[3]',
+        batch_size=5,
+        model_sigma=0.15,
+        model_nb_radiuses=24,
+        model_moments='[0, 1]',
+        loss_consistency_weighting=1,
+        loss_center_shift_weighting=1,
+        )
+    hparams = parser.parse_args([])
+    model:  CarotidArteryChallengeDiameterModule = \
+        CarotidArteryChallengeDiameterModule(hparams)
+    with mlflow.start_run():
+        artifact_path: Path = Path(
+            mlflow.get_artifact_uri().split('file://')[-1]
+            )
+
+        trainer = pl.Trainer(
+            max_epochs=1, logger=False, gpus=1,
+            callbacks=[
+                DiceCallback(
+                    artifact_path,
+                    gt_key='gt_lumen_processed_contour',
+                    slice_id='slice_id',
+                    forward_to_pred=lambda batch, module: module(
+                        batch
+                        )[0][0, :, :, :, 0]
+                    )
+                ],
+            default_root_dir=TEST_OUTPUT_PATH
+        )
+        mlflow.pytorch.autolog()
+        trainer.test(model)
+        assert (
+            artifact_path / 'DiceCallback' / 'result.csv'
+            ).exists()
+    mlflow.end_run()
+
+
+def test_haussdorff_callback():
+    """Test HaussdorffCallback class
+    """
+    shutil.rmtree(TEST_OUTPUT_PATH, ignore_errors=True)
+    TEST_OUTPUT_PATH.mkdir(exist_ok=True)
+
+    FileStore(root_directory = str(TEST_OUTPUT_PATH / 'mlruns'))
+    mlflow.set_tracking_uri(
+        f"file://{str(TEST_OUTPUT_PATH / 'mlruns')}"
     )
 
     # Set parameters
@@ -118,79 +182,26 @@ def test_image_visualizer():
         CarotidArteryChallengeDiameterModule(hparams)
     with mlflow.start_run():
         artifact_path: Path = Path(
-                mlflow.get_artifact_uri().split('file://')[-1]
-            )
-
-        trainer = pl.Trainer(
-            max_epochs=1, logger=False, gpus=1,
-            callbacks=[
-                ImageVisualizer(artifact_path)
-                ],
-            default_root_dir=TEST_OUTPUT_PATH
-        )
-        mlflow.pytorch.autolog()
-        trainer.test(model)
-        for i in range(5):
-            assert (
-                artifact_path / 'ImageVisualizer' /
-                f'test_image_{i}.png'
-                ).exists()
-    mlflow.end_run()
-
-
-def test_landmarks_visualizer():
-    """Test LandmarksVisualizer callback"""
-    shutil.rmtree(TEST_OUTPUT_PATH, ignore_errors=True)
-    TEST_OUTPUT_PATH.mkdir(exist_ok=True)
-
-    FileStore(root_directory = str(TEST_OUTPUT_PATH / 'mlruns'))
-    mlflow.set_tracking_uri(
-        f'{TEST_OUTPUT_PATH.as_posix()}/mlruns/'
-    )
-
-    # Set parameters
-    parser = argparse.ArgumentParser(
-        description='Process hyperparameters'
-        )
-    parser = CarotidArteryChallengeDiameterModule.add_model_specific_args(
-        parser
-        )
-    parser.set_defaults(
-        num_fold=20,
-        seed=5,
-        lr=(10**-4),
-        landmarks_dimension_x=768,
-        landmarks_dimension_y=160,
-        training_cache_rate=0,
-        test_folds='[4]',
-        validation_folds='[3]',
-        batch_size=5,
-        model_sigma=0.15,
-        model_nb_radiuses=24,
-        model_moments='[0, 1]',
-        loss_consistency_weighting=1,
-        loss_center_shift_weighting=1,
-        )
-    hparams = parser.parse_args([])
-    model:  CarotidArteryChallengeDiameterModule = \
-        CarotidArteryChallengeDiameterModule(hparams)
-    with mlflow.start_run():
-        artifact_path: Path = Path(
             mlflow.get_artifact_uri().split('file://')[-1]
             )
 
         trainer = pl.Trainer(
             max_epochs=1, logger=False, gpus=1,
             callbacks=[
-                LandmarksVisualizer(artifact_path)
+                HaussdorffCallback(
+                    artifact_path,
+                    gt_key='gt_lumen_processed_contour',
+                    slice_id='slice_id',
+                    forward_to_pred=lambda batch, module: module(
+                        batch
+                        )[0][0, :, :, :, 0]
+                    )
                 ],
             default_root_dir=TEST_OUTPUT_PATH
         )
         mlflow.pytorch.autolog()
         trainer.test(model)
-        for i in range(5):
-            assert (
-                artifact_path / 'LandmarksVisualizer' /
-                f'test_landmarks_{i}.png'
-                ).exists()
+        assert (
+            artifact_path / 'HaussdorffCallback' / 'result.csv'
+            ).exists()
     mlflow.end_run()

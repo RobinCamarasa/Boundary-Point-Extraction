@@ -24,7 +24,8 @@ def test_carotid_challenge_dataset_init():
             )
         first_element: dict = carotid_challenge_dataset[-1]
         assert set(first_element.keys()) == {
-            'gt', 'image_meta_dict', 'image', 'annotation_type'
+            'gt', 'image_meta_dict', 'image', 'annotation_type',
+            'slice_id'
             }
         assert Path(
             first_element['gt']
