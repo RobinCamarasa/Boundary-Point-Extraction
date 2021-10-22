@@ -118,11 +118,11 @@ class CropImageCarotidChallenge(MapTransform):
                 data[key] = data[key][:, dimension[1] // 2:]
         for key in self.landmark_keys:
             # Apply the shift due to padding
-            data[key][:, 0] += (dimension[1] - initial_dimension[0]) // 2
-            data[key][:, 1] += (dimension[2] - initial_dimension[1]) // 2
+            data[key][:, :, 0] += (dimension[1] - initial_dimension[0]) // 2
+            data[key][:, :, 1] += (dimension[2] - initial_dimension[1]) // 2
             # Apply the shift due to cropping
             if 'left' in data[self.annotation_key]:
-                data[key][:, 0] -= dimension[1] // 2
+                data[key][:, :, 0] -= dimension[1] // 2
         return data
 
 
