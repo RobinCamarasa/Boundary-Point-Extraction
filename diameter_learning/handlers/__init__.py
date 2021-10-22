@@ -5,5 +5,5 @@ from .haussdorf import (
     HaussdorfCallback
     )
 from .visualizers import (
-    SegmentationVisualizer
+    SegmentationVisualizer, ImageVisualizer
     )
