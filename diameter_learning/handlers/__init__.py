@@ -4,3 +4,6 @@ from .dice import (
 from .haussdorf import (
     HaussdorfCallback
     )
+from .visualizers import (
+    SegmentationVisualizer
+    )
