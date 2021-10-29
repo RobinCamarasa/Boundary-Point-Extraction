@@ -8,7 +8,7 @@ from monai.transforms import (
     LoadImaged, SpatialPadd, AsChannelFirstd, AddChanneld,
     ToTensord
     )
-from monai.networks.nets import BasicUNet
+from monai.networks.nets import BasicUNet, UNet
 from diameter_learning.settings import DATA_PRE_PATH
 from diameter_learning.apps import CarotidChallengeDataset
 from diameter_learning.nets.layers import (
@@ -156,7 +156,7 @@ class CarotidArteryChallengeModule():
         parser.add_argument('--image_dimension_x', type=int)
         parser.add_argument('--image_dimension_y', type=int)
         parser.add_argument('--training_cache_rate', type=float)
-        parser.add_argument('--batch_size', type=float)
+        parser.add_argument('--batch_size', type=int)
         parser.add_argument('--test_folds', type=str)
         parser.add_argument('--validation_folds', type=str)
         return parent_parser
@@ -194,16 +194,17 @@ class CarotidArteryChallengeDiameterModule(
         self.model: torch.nn.Module = BasicUNet(
             spatial_dims=2,
             in_channels=1,
-            out_channels=1,
+            out_channels=1
             )
-        self.loss = torch.nn.MSELoss()
-        self.sigmoid = torch.nn.Sigmoid()
-        self.center_of_mass_extractor = CenterOfMass2DExtractor()
+        # self.model.to(torch.float32)
+        self.loss = torch.nn.MSELoss().float()
+        self.sigmoid = torch.nn.Sigmoid().float()
+        self.center_of_mass_extractor = CenterOfMass2DExtractor().float()
         self.gaussian_radius_extractor = MomentGaussianRadiusExtractor(
                 moments=self.hparams.model_moments,
                 nb_radiuses=self.hparams.model_nb_radiuses,
                 sigma=self.hparams.model_sigma
-            )
+            ).float()
         self.vanilla_diameter_extractor = VanillaDiameterExtractor(
                 nb_radiuses=self.hparams.model_nb_radiuses
             )
@@ -225,8 +226,8 @@ class CarotidArteryChallengeDiameterModule(
             -1
             )
         center_of_mass = self.center_of_mass_extractor(
-                segmentation
-                )
+            segmentation
+            )
         radiuses = self.gaussian_radius_extractor(
             segmentation, center_of_mass
             )
@@ -234,7 +235,6 @@ class CarotidArteryChallengeDiameterModule(
             torch.mean(radiuses, 0)
             )
         return segmentation, center_of_mass, radiuses, diameter
-
 
     def compute_losses(
         self, batch, batch_idx
@@ -251,17 +251,17 @@ class CarotidArteryChallengeDiameterModule(
 
         # Compute the diameter MSE
         diameter_loss = self.loss(
-            diameter, batch['gt_lumen_processed_diameter']
+            diameter, batch['gt_lumen_processed_diameter'].float()
             )
 
         # Compute the center shift MSE
         gt_landmarks_center = batch['gt_lumen_processed_landmarks'].mean(-2)
         center_shift_loss = 1/2 * (
             self.loss(
-                center_of_mass.real, gt_landmarks_center[:, :, 1]
+                center_of_mass.real, gt_landmarks_center[:, :, [1]].float()
                 ) +
             self.loss(
-                center_of_mass.imag, gt_landmarks_center[:, :, 0]
+                center_of_mass.imag, gt_landmarks_center[:, :, [0]].float()
                 )
             )
 
@@ -336,8 +336,11 @@ class CarotidArteryChallengeDiameterModule(
         return parent_parser
 
     def _process_args(self):
-        super()._process_args()
-        self.hparams.model_moments = eval(self.hparams.model_moments)
+        try:
+            super()._process_args()
+            self.hparams.model_moments = eval(self.hparams.model_moments)
+        except:
+            pass
 
 
 class CarotidArteryChallengeDiameterResNet(

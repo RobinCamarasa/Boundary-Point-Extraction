@@ -108,7 +108,7 @@ class DiceCallback(MetricCallback):
         super().__init__(
             result_path, gt_key, slice_id, forward_to_pred,
             lambda pred, gt: 1 - DiceLoss(reduction=LossReduction.MEAN)(
-                pred, gt
+                pred, gt.unsqueeze(0)
                 ).item()
             )
 

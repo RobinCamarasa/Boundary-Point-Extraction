@@ -22,17 +22,19 @@ class CenterOfMass2DExtractor(torch.nn.Module):
         """
         # Compute the total mass
         index_array = torch.arange(
-                x.shape[2] * x.shape[3]
+                x.shape[2] * x.shape[3], dtype=torch.float32
                 ).reshape(
                         x.shape[2], x.shape[3]
                         ).to(x.device)
-        x_indices = index_array % x.shape[3]
-        y_indices = index_array // x.shape[3]
+        x_indices = torch.fmod(index_array, x.shape[3])
+        y_indices = torch.div(
+            index_array, x.shape[3], rounding_mode='floor'
+            )
         mass = x.sum(list(range(2, len(x.shape) - 1)))
 
         center_of_mass = torch.complex(
-                torch.zeros(mass.shape),
-                torch.zeros(mass.shape)
+                torch.zeros(mass.shape, dtype=torch.float32),
+                torch.zeros(mass.shape, dtype=torch.float32)
                 ).to(x.device)
 
         # Loop to get the center of mass
@@ -238,14 +240,14 @@ class MomentGaussianRadiusExtractor(GaussianRadiusExtractor):
         """
         # Generate complex plan
         index_array = torch.arange(
-                x.shape[2] * x.shape[3]
-                ).reshape(
-                    x.shape[2], x.shape[3]
-                    )
+            x.shape[2] * x.shape[3]
+            ).reshape(
+                x.shape[2], x.shape[3]
+                )
         complex_plan = torch.complex(
-                (index_array % x.shape[3]).float(),
-                (index_array // x.shape[3]).float()
-                ).to(x.device)
+        (index_array % x.shape[3]).float(),
+            (index_array // x.shape[3]).float()
+            ).to(x.device)
 
         # Output
         radiuses = torch.zeros(
@@ -255,22 +257,22 @@ class MomentGaussianRadiusExtractor(GaussianRadiusExtractor):
             ).to(x.device)
 
         centered_plan = self.get_centered_plan(
-                center_of_mass, complex_plan
-                ).to(x.device)
+            center_of_mass, complex_plan
+            ).to(x.device)
 
         # Apply the different integrals to get the radiuses
         for i, angle in enumerate(self.angles):
             angle = i * (2 * math.pi / self.nb_radiuses) - math.pi
             angle_filter = self.get_filter(
-                    center_of_mass, complex_plan, angle
-                    ).to(x.device)
+                center_of_mass, complex_plan, angle
+                ).to(x.device)
             for j, moment in enumerate(self.moments):
                 radiuses[j, :, :, i, :] = (
-                        (moment + 2) *
-                        (angle_filter * x * centered_plan.abs() ** moment).sum(
-                            list(range(2, len(x.shape) - 1))
-                            )
-                        ) ** (1/(moment + 2))
+                    (moment + 2) *
+                    (angle_filter * x * centered_plan.abs() ** moment).sum(
+                        list(range(2, len(x.shape) - 1))
+                        )
+                    ) ** (1/(moment + 2))
         return radiuses
 
 
@@ -308,12 +310,12 @@ class VanillaDiameterExtractor(torch.nn.Module):
                 range(x.shape[-1]),
                 ):
             vectors = torch.complex(
-                    x[nb, nf, :, nz] * torch.cos(self.angles).to(x.device),
-                    x[nb, nf, :, nz] * torch.sin(self.angles).to(x.device)
-                    ).unsqueeze(0).to(x.device)
+                x[nb, nf, :, nz] * torch.cos(self.angles).to(x.device),
+                x[nb, nf, :, nz] * torch.sin(self.angles).to(x.device)
+                ).unsqueeze(0).to(x.device)
             distance_matrix = (
-                    torch.transpose(unitary_vector, 0, 1) * vectors -
-                    torch.transpose(vectors, 0, 1) * unitary_vector
-                    ).abs()
+                torch.transpose(unitary_vector, 0, 1) * vectors -
+                torch.transpose(vectors, 0, 1) * unitary_vector
+                ).abs()
             diameters[nb, nf, nz] = distance_matrix.max()
         return diameters

@@ -68,14 +68,18 @@ def test_segmentation_visualizer():
         )
         mlflow.pytorch.autolog()
         trainer.test(model)
-        for i in range(5):
+        for i in [
+            '0_P723_U_slice_126', '0_P723_U_slice_130',
+            '0_P723_U_slice_135', '0_P723_U_slice_184',
+            '0_P723_U_slice_249'
+        ]:
             assert (
                 artifact_path / 'SegmentationVisualizer' /
-                f'test_pred_{i}.png'
+                f'pred_{i}.png'
                 ).exists()
             assert (
                 artifact_path / 'SegmentationVisualizer' /
-                f'test_gt_{i}.png'
+                f'gt_{i}.png'
                 ).exists()
     mlflow.end_run()
 
@@ -130,10 +134,14 @@ def test_image_visualizer():
         )
         mlflow.pytorch.autolog()
         trainer.test(model)
-        for i in range(5):
+        for i in [
+            '0_P723_U_slice_126', '0_P723_U_slice_130',
+            '0_P723_U_slice_135', '0_P723_U_slice_184',
+            '0_P723_U_slice_249'
+        ]:
             assert (
                 artifact_path / 'ImageVisualizer' /
-                f'test_image_{i}.png'
+                f'image_{i}.png'
                 ).exists()
     mlflow.end_run()
 
@@ -188,9 +196,13 @@ def test_landmarks_visualizer():
         )
         mlflow.pytorch.autolog()
         trainer.test(model)
-        for i in range(5):
+        for i in [
+            '0_P723_U_slice_126', '0_P723_U_slice_130',
+            '0_P723_U_slice_135', '0_P723_U_slice_184',
+            '0_P723_U_slice_249'
+        ]:
             assert (
-                artifact_path / 'LandmarksVisualizer' /
-                f'test_landmarks_{i}.png'
+                artifact_path / 'ImageVisualizer' /
+                f'gt_{i}.png'
                 ).exists()
     mlflow.end_run()

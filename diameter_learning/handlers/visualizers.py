@@ -22,6 +22,7 @@ class SegmentationVisualizer(Callback):
     def __init__(
             self, result_path: Path,
             image_key: str = 'image',
+            id_key: str = 'slice_id',
             segmentation_key: str = 'gt_lumen_processed_contour',
             forward_to_pred: callable = lambda batch, pl_module: pl_module(
                 batch
@@ -35,6 +36,7 @@ class SegmentationVisualizer(Callback):
         self.segmentation_key = segmentation_key
         self.forward_to_pred = forward_to_pred
         self.number_of_images = number_of_images
+        self.id_key = id_key
 
     def __call__(
         self, image: np.array, segmentation: np.array,
@@ -76,14 +78,15 @@ class SegmentationVisualizer(Callback):
         prediction = self.forward_to_pred(
             batch, pl_module
             )[0, 0].detach().cpu().numpy()
-        if batch_idx < self.number_of_images:
+        if self.number_of_images is None or \
+                batch_idx < self.number_of_images:
             self(
                 batch[self.image_key][0, 0].detach().cpu().numpy(),
                 batch[self.segmentation_key][0, 0].detach().cpu().numpy(),
                 cmap='viridis'
                 )
             plt.savefig(
-                self.result_path / f'test_gt_{batch_idx}',
+                self.result_path / f'gt_{batch[self.id_key][0]}',
                 bbox_inches='tight', dpi=300,
                 )
             self(
@@ -91,7 +94,7 @@ class SegmentationVisualizer(Callback):
                 cmap='viridis'
                 )
             plt.savefig(
-                self.result_path / f'test_pred_{batch_idx}',
+                self.result_path / f'pred_{batch[self.id_key][0]}',
                 bbox_inches='tight', dpi=300
             )
 
@@ -107,12 +110,14 @@ class ImageVisualizer(Callback):
     def __init__(
             self, result_path: Path,
             image_key: str = 'image',
+            id_key: str = 'slice_id',
             number_of_images: int = 5
     ):
         super().__init__()
         self.result_path = result_path / self.__class__.__name__
         self.result_path.mkdir(exist_ok=True)
         self.image_key = image_key
+        self.id_key = id_key
         self.number_of_images = number_of_images
 
     def __call__(
@@ -146,12 +151,13 @@ class ImageVisualizer(Callback):
         :param batch_idx: Id of the batch under study
         :param dataloader_idx: Id of the dataloader understudy
         """
-        if batch_idx < self.number_of_images:
+        if self.number_of_images is None or \
+                batch_idx < self.number_of_images:
             self(
                 batch[self.image_key][0, 0].detach().cpu().numpy(),
                 )
             plt.savefig(
-                self.result_path / f'test_image_{batch_idx}',
+                self.result_path / f'image_{batch[self.id_key][0]}',
                 bbox_inches='tight', dpi=300,
                 )
 
@@ -170,6 +176,7 @@ class LandmarksVisualizer(Callback):
     def __init__(
             self, result_path: Path,
             image_key: str = 'image',
+            id_key: str = 'slice_id',
             landmarks_key: str = 'gt_lumen_processed_landmarks',
             forward_to_pred: callable = lambda batch, pl_module: pl_module(
                 batch
@@ -180,6 +187,7 @@ class LandmarksVisualizer(Callback):
         self.result_path = result_path / self.__class__.__name__
         self.result_path.mkdir(exist_ok=True)
         self.image_key = image_key
+        self.id_key = id_key
         self.landmarks_key = landmarks_key
         self.forward_to_pred = forward_to_pred
         self.number_of_images = number_of_images
@@ -228,7 +236,8 @@ class LandmarksVisualizer(Callback):
         :param batch_idx: Id of the batch under study
         :param dataloader_idx: Id of the dataloader understudy
         """
-        if batch_idx < self.number_of_images:
+        if self.number_of_images is None or \
+                batch_idx < self.number_of_images:
             _, center_of_mass, radiuses, _ = pl_module(batch)
             control_points =  self.post_process(
                 center_of_mass.cpu().detach().numpy(),
@@ -241,6 +250,6 @@ class LandmarksVisualizer(Callback):
                 control_points[0, 0, :, :, 0]
                 )
             plt.savefig(
-                self.result_path / f'test_landmarks_{batch_idx}',
+                self.result_path / f'pred_{batch[self.id_key][0]}',
                 bbox_inches='tight', dpi=300,
                 )

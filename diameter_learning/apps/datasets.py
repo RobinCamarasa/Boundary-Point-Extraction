@@ -80,9 +80,10 @@ class CarotidChallengeDataset(CacheDataset):
                 ]
         return [
             {
-                'slice_id': '{}_{}'.format(
+                'slice_id': '{}_{}_{}'.format(
                     annotation_file.parents[1].stem,
-                    annotation_file.parents[0].stem
+                    annotation_file.parents[0].stem,
+                    annotation_file.stem.split('_annotation')[0]
                     ),
                 'gt': str(annotation_file),
                 'image': str(annotation_file.parent / 'image.dcm'),

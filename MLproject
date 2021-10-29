@@ -5,3 +5,41 @@ conda_env: conda.yaml
 entry_points:
   stats:
     command: "export PYTHONPATH=\"$(pwd)\" && python scripts/statistics/__main__.py"
+  method:
+    parameters:
+      num_fold: {type: int, default: 5}
+      seed: {type: int, default: 5}
+      lr: {type: float, default: 0.0001}
+      image_dimension_x: {type: int, default: 768}
+      image_dimension_y: {type: int, default: 160}
+      training_cache_rate: {type: int, default: 1}
+      test_folds: {type: str, default: '[4]'}
+      validation_folds: {type: str, default: '[3]'}
+      batch_size: {type: int, default: 30}
+      model_sigma: {type: float, default: 0.15}
+      model_nb_radiuses: {type: int, default: 24}
+      model_moments: {type: int, default: '[0, 1]'}
+      loss_consistency_weighting: {type: float, default: 100}
+      loss_center_shift_weighting: {type: float, default: 10}
+      max_epochs: {type: int, default: 300}
+    command: "export PYTHONPATH=\"$(pwd)\" && python scripts/method/__main__.py
+        --num_fold {num_fold}
+        --seed {seed}
+        --lr {lr}
+        --image_dimension_x {image_dimension_x}
+        --image_dimension_y {image_dimension_y}
+        --training_cache_rate {training_cache_rate}
+        --test_folds {test_folds}
+        --validation_folds {validation_folds}
+        --batch_size {batch_size}
+        --model_sigma {model_sigma}
+        --model_nb_radiuses {model_nb_radiuses}
+        --model_moments {model_moments}
+        --loss_consistency_weighting {loss_consistency_weighting}
+        --loss_center_shift_weighting {loss_center_shift_weighting}
+        --max_epochs {max_epochs}
+      "
+  method_evaluation:
+    parameters:
+      run_id: {type: str}
+    command: "export PYTHONPATH=\"$(pwd)\" && python scripts/method_evaluation/__main__.py --run_id {run_id}"
