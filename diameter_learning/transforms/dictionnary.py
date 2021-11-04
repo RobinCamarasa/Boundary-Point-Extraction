@@ -80,6 +80,29 @@ class LoadCarotidChallengeAnnotations(MapTransform):
         return data
 
 
+class LoadVoxelSized(MapTransform):
+    """Load the voxel dimension (assuming isotropy)
+
+    :param keys: Key of that contain image metadata
+    """
+    def __init__(
+            self,
+            keys: str = 'image_meta_dict',
+            suffix: str = '_spacing',
+    ):
+        super().__init__(keys)
+        self.suffix = suffix
+
+    def __call__(self, data: dict) -> dict:
+        """Method to obtain voxel dimension
+
+        :param data: Data after LoadImaged
+        :return: Updated dictionnary
+        """
+        data[self.keys[0] + self.suffix] = data[self.keys[0]]['spacing'][0]
+        return data
+
+
 class CropImageCarotidChallenge(MapTransform):
     """Crop the left or the right part of the image depending
     on if it is a left or a right annotation

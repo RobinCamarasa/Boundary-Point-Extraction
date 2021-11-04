@@ -17,7 +17,7 @@ from diameter_learning.nets.layers import (
     )
 from diameter_learning.transforms import (
     LoadCarotidChallengeSegmentation, LoadCarotidChallengeAnnotations,
-    CropImageCarotidChallenge, PopKeysd
+    CropImageCarotidChallenge, PopKeysd, LoadVoxelSized
     )
 
 
@@ -45,6 +45,7 @@ class CarotidArteryChallengeModule():
             monai.transforms.MapTransform
             ] = [
             LoadImaged("image"),
+            LoadVoxelSized("image_meta_dict"),
             PopKeysd("image_meta_dict"),
             AsChannelFirstd("image"),
             LoadCarotidChallengeAnnotations("gt"),

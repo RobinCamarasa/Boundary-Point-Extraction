@@ -9,7 +9,7 @@ from monai.transforms import (
 from diameter_learning.apps import CarotidChallengeDataset
 from diameter_learning.transforms import (
     LoadCarotidChallengeSegmentation, LoadCarotidChallengeAnnotations,
-    CropImageCarotidChallenge, PopKeysd
+    CropImageCarotidChallenge, PopKeysd, LoadVoxelSized
     )
 from diameter_learning.settings import DATA_PRE_PATH, TEST_OUTPUT_PATH
 
@@ -57,8 +57,8 @@ def test_load_carotid_challenge_segmentation():
             )
 
 
-def test_load_carotid_challenge_annotations():
-    """Test LoadCarotidChallengeAnnotations class"""
+def test_load_voxel_sized():
+    """Test LoadVoxelSized class"""
     shutil.rmtree(TEST_OUTPUT_PATH, ignore_errors=True)
     TEST_OUTPUT_PATH.mkdir()
     carotid_challenge_dataset = CarotidChallengeDataset(
@@ -67,7 +67,7 @@ def test_load_carotid_challenge_annotations():
         transforms=Compose(
             [
                 LoadImaged("image"),
-                LoadCarotidChallengeAnnotations("gt")
+                LoadVoxelSized("image_meta_dict")
                 ]
             ),
         seed=0,
@@ -78,13 +78,11 @@ def test_load_carotid_challenge_annotations():
     for i in range(5):
         element = carotid_challenge_dataset[i]
         assert set(element.keys()) == {
-            'gt_lumen_processed_diameter', 'image_meta_dict', 'gt',
-            'gt_lumen_processed_landmarks', 'image', 'annotation_type',
-            'gt_lumen_processed_contour', 'slice_id'
+            'image_meta_dict', 'gt',
+            'image', 'annotation_type',
+            'slice_id', 'image_meta_dict_spacing'
             }
-        assert element['gt_lumen_processed_landmarks'].shape == (2, 2)
-        assert element['gt_lumen_processed_diameter'].shape == ()
-        assert element['gt_lumen_processed_contour'].shape[1] == 2
+        assert element['image_meta_dict_spacing'] == 0.390625
 
 
 def test_crop_image_carotid_challenge():
