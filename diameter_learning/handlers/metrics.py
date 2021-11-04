@@ -22,20 +22,21 @@ class MetricCallback(Callback):
             to a prediction (tensor of dimension 4)
     """
     def __init__(
-            self, result_path: Path, gt_key: str,
+            self, result_path: Path,
             slice_id_key: str,
-            forward_to_pred: callable,
-            metric_method: callable,
+            get_gt: callable,
+            get_pred: callable,
     ):
         super().__init__()
         self.result_path = result_path / self.__class__.__name__
         self.result_path.mkdir(exist_ok=True)
-        self.gt_key = gt_key
         self.slice_id_key = slice_id_key
-        self.forward_to_pred = forward_to_pred
-        self.metric_method = metric_method
+        self.get_gt = get_gt
+        self.get_pred = get_pred
         self.values = []
-        self.slice_ids = []
+
+    def compute_metric(pred, gt):
+        pass
 
     def on_test_batch_start(
             self,
@@ -55,10 +56,14 @@ class MetricCallback(Callback):
         :param dataloader_idx: Id of the dataloader understudy
         """
         # Compute diameter
-        pred = self.forward_to_pred(batch, pl_module).detach().cpu()
-        gt = batch[self.gt_key].detach().cpu()[0]
-        self.values.append(float(self.metric_method(pred, gt)))
-        self.slice_ids.append(batch[self.slice_id_key][0])
+        pred = self.get_pred(batch, pl_module).detach().cpu()
+        gt = self.get_gt(batch).detach().cpu()
+        self.values.append(
+            {
+                "values": self.compute_metric(pred, gt),
+                "slice_id": batch[self.slice_id_key][0]
+                }
+        )
 
     def on_test_end(
             self, trainer, pl_module
@@ -71,10 +76,7 @@ class MetricCallback(Callback):
         """
         # Process values
         dataframe = pd.DataFrame(
-            {
-                'slice_id': self.slice_ids,
-                'values': self.values
-                }
+                self.values
             ).set_index('slice_id')
         dataframe.to_csv(self.result_path / 'result.csv')
 
@@ -91,40 +93,58 @@ class MetricCallback(Callback):
 
 class RelativeDiameterError(MetricCallback):
     def __init__(
-        self, result_path: Path, gt_key: str, slice_id: str,
-        forward_to_pred: callable,
+        self, result_path: Path, 
+        get_gt: callable, 
+        get_pred: callable,
+        slice_id_key: str,
         ):
         super().__init__(
-            result_path, gt_key, slice_id, forward_to_pred,
-            lambda pred, gt: torch.abs(gt.sum() - pred.sum()) / gt.sum()
+            result_path=result_path,
+            get_gt=get_gt,
+            get_pred=get_pred,
+            slice_id_key=slice_id_key,
             )
+
+    def compute_metric(self, pred, gt):
+        return (torch.abs(gt.sum() - pred.sum()) / gt.sum()).item()
 
 
 class DiceCallback(MetricCallback):
     def __init__(
-        self, result_path: Path, gt_key: str, slice_id: str,
-        forward_to_pred: callable,
+        self, result_path: Path, 
+        get_gt: callable, 
+        get_pred: callable,
+        slice_id_key: str,
         ):
         super().__init__(
-            result_path, gt_key, slice_id, forward_to_pred,
-            lambda pred, gt: 1 - DiceLoss(reduction=LossReduction.MEAN)(
-                pred, gt.unsqueeze(0)
-                ).item()
+            result_path=result_path,
+            get_gt=get_gt,
+            get_pred=get_pred,
+            slice_id_key=slice_id_key,
             )
+
+    def compute_metric(self, pred, gt):
+        return 1 - DiceLoss(reduction=LossReduction.MEAN)(
+            pred, gt
+            ).item()
 
 
 class HaussdorffCallback(MetricCallback):
     def __init__(
-        self, result_path: Path, gt_key: str,
-        slice_id: str, forward_to_pred: callable,
-        percentile: int = 95, threshold: float = .5
+            self, result_path: Path,
+            get_gt: callable, 
+            get_pred: callable,
+            slice_id_key: str,
+            threshold: float = .5
         ):
         super().__init__(
-            result_path, gt_key, slice_id, forward_to_pred,
-            lambda pred, gt: compute_hausdorff_distance(
-                    pred.unsqueeze(0) > threshold, gt.unsqueeze(0),
-                    percentile
-                ).item()
+            result_path=result_path,
+            get_gt=get_gt,
+            get_pred=get_pred,
+            slice_id_key=slice_id_key,
             )
-        self.percentile = percentile
-        self.threshold = threshold
+
+    def compute_metric(self, pred, gt):
+        lambda pred, gt: compute_hausdorff_distance(
+            pred > threshold, gt
+            )

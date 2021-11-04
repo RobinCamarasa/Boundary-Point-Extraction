@@ -1,6 +1,6 @@
 from .visualizers import (
     SegmentationVisualizer, ImageVisualizer,
-    LandmarksVisualizer
+    LandmarksVisualizer, GroundTruthVisualizer
     )
 from .metrics import (
     RelativeDiameterError, DiceCallback, HaussdorffCallback

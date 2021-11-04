@@ -60,13 +60,15 @@ def test_relative_diameter_error_callback():
             max_epochs=1, logger=False, gpus=1,
             callbacks=[
                 RelativeDiameterError(
-                    artifact_path,
-                    gt_key='gt_lumen_processed_diameter',
-                    slice_id='slice_id',
-                    forward_to_pred=lambda batch, module: module(
+                    result_path=artifact_path,
+                    get_gt=lambda batch: batch[
+                        'gt_lumen_processed_diameter'
+                        ],
+                    get_pred=lambda batch, module: module(
                         batch
-                        )[3][:, :, 0]
-                    )
+                        )[3][:, :, 0],
+                    slice_id_key='slice_id'
+                    ),
                 ],
             default_root_dir=TEST_OUTPUT_PATH
         )
@@ -125,12 +127,15 @@ def test_dice_callback():
             max_epochs=1, logger=False, gpus=1,
             callbacks=[
                 DiceCallback(
-                    artifact_path,
-                    gt_key='gt_lumen_processed_contour',
-                    slice_id='slice_id',
-                    forward_to_pred=lambda batch, module: module(
+                    result_path=artifact_path,
+                    get_gt=lambda batch: batch[
+                        'gt_lumen_processed_contour'
+                        ],
+
+                    get_pred=lambda batch, module: module(
                         batch
-                        )[0][0, :, :, :, 0]
+                        )[0][:, :, :, :, 0],
+                    slice_id_key='slice_id'
                     )
                 ],
             default_root_dir=TEST_OUTPUT_PATH
@@ -188,13 +193,16 @@ def test_haussdorff_callback():
         trainer = pl.Trainer(
             max_epochs=1, logger=False, gpus=1,
             callbacks=[
+
                 HaussdorffCallback(
-                    artifact_path,
-                    gt_key='gt_lumen_processed_contour',
-                    slice_id='slice_id',
-                    forward_to_pred=lambda batch, module: module(
+                    result_path=artifact_path,
+                    get_gt=lambda batch: batch[
+                        'gt_lumen_processed_contour'
+                        ],
+                    slice_id_key='slice_id',
+                    get_pred=lambda batch, module: module(
                         batch
-                        )[0][0, :, :, :, 0]
+                        )[0][:, :, :, :, 0]
                     )
                 ],
             default_root_dir=TEST_OUTPUT_PATH
