@@ -103,7 +103,7 @@ class CarotidArteryChallengeModule():
         # return training_dataset
         return DataLoader(
             training_dataset, batch_size=self.hparams.batch_size,
-            shuffle=True
+            shuffle=True, num_workers=0
             )
 
     def val_dataloader(self) -> DataLoader:

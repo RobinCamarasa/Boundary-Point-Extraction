@@ -7,6 +7,7 @@ entry_points:
     command: "export PYTHONPATH=\"$(pwd)\" && python scripts/statistics/__main__.py"
   method_training:
     parameters:
+      experiment_seed: {type: int, default: 5}
       num_fold: {type: int, default: 5}
       seed: {type: int, default: 5}
       lr: {type: float, default: 0.0001}
@@ -25,6 +26,7 @@ entry_points:
     command: "export PYTHONPATH=\"$(pwd)\" && python scripts/method/__main__.py
         --num_fold {num_fold}
         --seed {seed}
+        --experiment_seed {experiment_seed}
         --lr {lr}
         --image_dimension_x {image_dimension_x}
         --image_dimension_y {image_dimension_y}
@@ -38,6 +40,7 @@ entry_points:
         --loss_consistency_weighting {loss_consistency_weighting}
         --loss_center_shift_weighting {loss_center_shift_weighting}
         --max_epochs {max_epochs}
+        --deterministic True
       "
   method_evaluation:
     parameters:

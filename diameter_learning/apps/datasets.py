@@ -49,12 +49,9 @@ class CarotidChallengeDataset(CacheDataset):
         super().__init__(data, transforms, cache_rate=cache_rate)
 
     def _generate_dataset(self) -> List[Mapping[str, str]]:
-        # Initialise random
-        random.seed(self.seed)
-
         # Get the patient folders of the considered folds
         all_patient_folders: List[Path] = list(self.root_dir.glob('*'))
-        random.shuffle(all_patient_folders)
+        random.Random(self.seed).shuffle(all_patient_folders)
         patient_folders: List[Path] = []
         num_patient_per_fold: int = len(all_patient_folders) // self.num_fold
         for fold in self.folds:
