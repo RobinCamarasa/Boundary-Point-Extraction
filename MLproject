@@ -5,7 +5,7 @@ conda_env: conda.yaml
 entry_points:
   stats:
     command: "export PYTHONPATH=\"$(pwd)\" && python scripts/statistics/__main__.py"
-  method:
+  method_training:
     parameters:
       num_fold: {type: int, default: 5}
       seed: {type: int, default: 5}

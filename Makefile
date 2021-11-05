@@ -28,3 +28,6 @@ delete_experiments: mlruns
 
 show_experiments: mlruns
 	@mlflow ui
+
+method: data/care_ii_challenge/preprocessed
+	@mlflow run --experiment-name method_training -e method_training ./ --no-conda
