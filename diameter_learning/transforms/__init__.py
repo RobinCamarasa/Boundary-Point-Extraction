@@ -2,7 +2,8 @@
 """
 from .dictionnary import (
     LoadCarotidChallengeSegmentation, LoadCarotidChallengeAnnotations,
-    CropImageCarotidChallenge, PopKeysd, LoadVoxelSized
+    CropImageCarotidChallenge, PopKeysd, LoadVoxelSized,
+    TransformToGeodesicMapd
     )
 
 from .array import (

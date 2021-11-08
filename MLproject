@@ -41,6 +41,7 @@ entry_points:
         --loss_center_shift_weighting {loss_center_shift_weighting}
         --max_epochs {max_epochs}
         --deterministic True
+        --log_every_n_steps 1
       "
   method_evaluation:
     parameters:

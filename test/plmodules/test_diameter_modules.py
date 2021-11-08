@@ -4,7 +4,7 @@ import argparse
 from torch.utils.data import DataLoader
 from diameter_learning.plmodules import (
     CarotidArteryChallengeDiameterModule,
-    CarotidArteryChallengeDiameterResNet
+    CarotidArteryChallengeGeodesicNet
     )
 
 
@@ -329,12 +329,12 @@ def test_diameter_module_compute_losses():
     assert total_loss.shape == tuple()
 
 
-def test_resnet_forward():
-    """Test CarotidArteryChallengeDiameterResNet forward"""
+def test_geodesic_module_forward():
+    """Test forward method"""
     parser = argparse.ArgumentParser(
-            description='Process hyperparameters'
+        description='Process hyperparameters'
         )
-    parser = CarotidArteryChallengeDiameterResNet.add_model_specific_args(
+    parser = CarotidArteryChallengeGeodesicNet.add_model_specific_args(
         parser
         )
     parser.set_defaults(
@@ -346,33 +346,28 @@ def test_resnet_forward():
         training_cache_rate=0,
         test_folds='[4]',
         validation_folds='[3]',
-        batch_size=5,
-        model_sigma=0.15,
-        model_nb_radiuses=24,
-        model_moments='[0, 1]',
-        loss_consistency_weighting=1,
-        loss_center_shift_weighting=1,
+        batch_size=5
         )
     hparams = parser.parse_args([])
 
     # Create module
-    module: CarotidArteryChallengeDiameterResNet \
-        = CarotidArteryChallengeDiameterResNet(
+    module: CarotidArteryChallengeGeodesicNet \
+        = CarotidArteryChallengeGeodesicNet(
             hparams
+            )
+    example_batch: DataLoader = next(iter(module.train_dataloader()))
+    segmentation = module(
+        example_batch
         )
-    example_batch = next(iter(module.train_dataloader()))
-    output = module.forward(example_batch)
-    assert output.shape == example_batch[
-        'gt_lumen_processed_diameter'
-        ].shape
+    assert segmentation.shape == (5, 2, 384, 160)
 
 
-def test_resnet_training_step():
+def test_geodesic_module_training_step():
     """Test training_step method"""
     parser = argparse.ArgumentParser(
         description='Process hyperparameters'
         )
-    parser = CarotidArteryChallengeDiameterResNet.add_model_specific_args(
+    parser = CarotidArteryChallengeGeodesicNet.add_model_specific_args(
         parser
         )
     parser.set_defaults(
@@ -384,13 +379,13 @@ def test_resnet_training_step():
         training_cache_rate=0,
         test_folds='[4]',
         validation_folds='[3]',
-        batch_size=5,
+        batch_size=5
         )
     hparams = parser.parse_args([])
 
     # Create module
-    module: CarotidArteryChallengeDiameterResNet \
-        = CarotidArteryChallengeDiameterResNet(
+    module: CarotidArteryChallengeGeodesicNet \
+        = CarotidArteryChallengeGeodesicNet(
             hparams
         )
     module.log = lambda x, y, on_epoch: None
@@ -400,12 +395,12 @@ def test_resnet_training_step():
     assert loss.shape == tuple()
 
 
-def test_resnet_validation_step():
+def test_geodesic_module_validation_step():
     """Test validation_step method"""
     parser = argparse.ArgumentParser(
         description='Process hyperparameters'
         )
-    parser = CarotidArteryChallengeDiameterResNet.add_model_specific_args(
+    parser = CarotidArteryChallengeGeodesicNet.add_model_specific_args(
         parser
         )
     parser.set_defaults(
@@ -417,13 +412,13 @@ def test_resnet_validation_step():
         training_cache_rate=0,
         test_folds='[4]',
         validation_folds='[3]',
-        batch_size=5,
+        batch_size=5
         )
     hparams = parser.parse_args([])
 
     # Create module
-    module: CarotidArteryChallengeDiameterResNet \
-        = CarotidArteryChallengeDiameterResNet(
+    module: CarotidArteryChallengeGeodesicNet \
+        = CarotidArteryChallengeGeodesicNet(
             hparams
         )
     module.log = lambda x, y, on_epoch: None
@@ -433,12 +428,12 @@ def test_resnet_validation_step():
     assert loss.shape == tuple()
 
 
-def test_resnet_test_step():
+def test_geodesic_module_test_step():
     """Test test_step method"""
     parser = argparse.ArgumentParser(
         description='Process hyperparameters'
         )
-    parser = CarotidArteryChallengeDiameterResNet.add_model_specific_args(
+    parser = CarotidArteryChallengeGeodesicNet.add_model_specific_args(
         parser
         )
     parser.set_defaults(
@@ -450,17 +445,48 @@ def test_resnet_test_step():
         training_cache_rate=0,
         test_folds='[4]',
         validation_folds='[3]',
-        batch_size=5,
+        batch_size=5
         )
     hparams = parser.parse_args([])
 
     # Create module
-    module: CarotidArteryChallengeDiameterResNet \
-        = CarotidArteryChallengeDiameterResNet(
+    module: CarotidArteryChallengeGeodesicNet \
+        = CarotidArteryChallengeGeodesicNet(
             hparams
         )
     module.log = lambda x, y, on_epoch: None
 
     example_batch = next(iter(module.test_dataloader()))
     loss = module.test_step(example_batch, 0)
+    assert loss.shape == tuple()
+
+
+def test_geodesic_module_compute_losses():
+    """Test compute_losses"""
+    parser = argparse.ArgumentParser(
+            description='Process hyperparameters'
+        )
+    parser = CarotidArteryChallengeGeodesicNet.add_model_specific_args(
+        parser
+        )
+    parser.set_defaults(
+        num_fold=5,
+        seed=5,
+        lr=(10**-4),
+        image_dimension_x=768,
+        image_dimension_y=160,
+        training_cache_rate=0,
+        test_folds='[4]',
+        validation_folds='[3]',
+        batch_size=5
+        )
+    hparams = parser.parse_args([])
+
+    # Create module
+    module: CarotidArteryChallengeGeodesicNet \
+        = CarotidArteryChallengeGeodesicNet(
+            hparams
+        )
+    example_batch = next(iter(module.train_dataloader()))
+    loss = module.compute_losses(example_batch, 0)
     assert loss.shape == tuple()

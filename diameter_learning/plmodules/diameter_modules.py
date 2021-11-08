@@ -1,14 +1,18 @@
 """File containing diameter trainers"""
 from typing import Any, Mapping, Tuple, List
+
+import monai
 import torch
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
-import monai
 from monai.transforms import (
     LoadImaged, SpatialPadd, AsChannelFirstd, AddChanneld,
     ToTensord
     )
 from monai.networks.nets import BasicUNet, UNet
+from monai.losses import DiceLoss
+from monai.utils import LossReduction
+
 from diameter_learning.settings import DATA_PRE_PATH
 from diameter_learning.apps import CarotidChallengeDataset
 from diameter_learning.nets.layers import (
@@ -17,7 +21,8 @@ from diameter_learning.nets.layers import (
     )
 from diameter_learning.transforms import (
     LoadCarotidChallengeSegmentation, LoadCarotidChallengeAnnotations,
-    CropImageCarotidChallenge, PopKeysd, LoadVoxelSized
+    CropImageCarotidChallenge, PopKeysd, LoadVoxelSized,
+    TransformToGeodesicMapd
     )
 
 
@@ -296,6 +301,11 @@ class CarotidArteryChallengeDiameterModule(
         :return: The value of the loss
         """
         losses = self.compute_losses(batch, batch_idx)
+        dice = 1 - DiceLoss(reduction=LossReduction.MEAN)(
+                self(batch)[0][:, :, :, :, 0],
+                batch['gt_lumen_processed_contour']
+                ).item()
+        self.log('validation_dice', dice, on_epoch=True)
         self.log('validation_diameter_loss', losses[0].item(), on_epoch=True)
         self.log(
             'validation_center_shift_loss', losses[1].item(), on_epoch=True
@@ -304,6 +314,7 @@ class CarotidArteryChallengeDiameterModule(
             'validation_consistency_loss', losses[2].item(), on_epoch=True
             )
         self.log('validation_loss', losses[3].item(), on_epoch=True)
+        self.log('validation_dice', losses[3].item(), on_epoch=True)
         return losses[3]
 
     def test_step(self, batch, batch_idx) -> DataLoader:
@@ -344,39 +355,70 @@ class CarotidArteryChallengeDiameterModule(
             pass
 
 
-class CarotidArteryChallengeDiameterResNet(
+class CarotidArteryChallengeGeodesicNet(
     CarotidArteryChallengeModule, pl.LightningModule
     ):
     def __init__(self, hparams, *args, **kwargs):
+        # Process the arguments
         super(
-            CarotidArteryChallengeDiameterResNet, self
+            CarotidArteryChallengeGeodesicNet, self
             ).__init__(hparams, *args, **kwargs)
         self.save_hyperparameters(hparams)
         self._process_args()
         super()._set_dataset()
         super()._set_transform_toolchain()
+        # Modify post-process
+        self.postprocess_transforms = [
+            TransformToGeodesicMapd("gt_lumen_processed_landmarks"),
+            ToTensord(
+                [
+                    "image", "gt_lumen_processed_diameter",
+                    "gt_lumen_processed_landmarks",
+                    "gt_lumen_processed_landmarks_geodesic",
+                    "gt_lumen_processed_contour",
+                    ]
+                )
+            ]
 
-        self.model = torch.hub.load(
-            'pytorch/vision:v0.10.0', 'resnet50', pretrained=False
+        # Define torch layers and modules
+        self.model: torch.nn.Module = BasicUNet(
+            spatial_dims=2,
+            in_channels=1,
+            out_channels=2
             )
-        # The following lines are hard-coded because they correspond
-        # to pytorch default values
-        self.model.conv1 = torch.nn.Conv2d(
-                1, 64, kernel_size=(7, 7),
-                stride=(2, 2), padding=(3, 3), bias=False
-            )
-        self.model.fc = torch.nn.Linear(
-            in_features=2048, out_features=1, bias=True
-            )
-        self.loss = torch.nn.MSELoss()
-        self.sigmoid = torch.nn.ReLU()
+        # self.model.to(torch.float32)
+        self.loss = torch.nn.CrossEntropyLoss(reduction='none')
+        self.softmax = torch.nn.Softmax(dim=1).float()
 
-    def forward(self, x) -> torch.Tensor:
-        """Compute the diameter
 
-        :return: The diameter
+    def forward(self, x) -> Tuple[
+            torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor
+            ]:
+        """Compute the segmentation, the center of mass, the radiuses
+        and the diameter
+
+        :return: The segmentation, the center of mass, the radiuses
+            and the diameter
         """
-        return self.sigmoid(self.model(x['image']).unsqueeze(-1))
+        # The unsqueeze is there to make the segmentation 3D
+        # with a third dimension of size 1
+        return self.softmax(self.model(x['image']))
+
+    def compute_losses(
+        self, batch, batch_idx
+        ) -> torch.Tensor:
+        """Compute the different losses
+
+        :param batch: Batch evaluated
+        :param batch_idx: Id of the batch evaluated
+        """
+        prediction = self(batch)
+        gt = batch['gt_lumen_processed_landmarks_geodesic'].long()
+        mask = gt[:, 0] + gt[:, 1]
+        loss = self.loss(prediction, gt[:, 0])
+        return torch.sum(
+                loss * mask
+            ) / torch.sum(mask)
 
     def training_step(self, batch, batch_idx) -> torch.Tensor:
         """Define the training step
@@ -385,9 +427,7 @@ class CarotidArteryChallengeDiameterResNet(
         :param batch_idx: Id of the current training batch
         :return: The value of the loss
         """
-        loss = self.loss(
-            self(batch), batch['gt_lumen_processed_diameter']
-            )
+        loss = self.compute_losses(batch, batch_idx)
         self.log('training_loss', loss.item(), on_epoch=True)
         return loss
 
@@ -398,10 +438,8 @@ class CarotidArteryChallengeDiameterResNet(
         :param batch_idx: Id of the current validation batch
         :return: The value of the loss
         """
-        loss = self.loss(
-            self(batch), batch['gt_lumen_processed_diameter']
-            )
-        self.log('validation_loss', loss.item(), on_epoch=True)
+        loss = self.compute_losses(batch, batch_idx)
+        self.log('validation_loss', loss, on_epoch=True)
         return loss
 
     def test_step(self, batch, batch_idx) -> DataLoader:
@@ -411,8 +449,22 @@ class CarotidArteryChallengeDiameterResNet(
         :param batch_idx: Id of the current test batch
         :return: The value of the loss
         """
-        loss = self.loss(
-            self(batch), batch['gt_lumen_processed_diameter']
-            )
-        self.log('test_loss', loss.item(), on_epoch=True)
+        loss = self.compute_losses(batch, batch_idx)
+        self.log('test_loss', loss, on_epoch=True)
         return loss
+
+
+    @classmethod
+    def add_model_specific_args(cls, parent_parser):
+        """Add the argument in the argparser that are model specific
+
+        :param cls: Class
+        """
+        parent_parser = super(CarotidArteryChallengeGeodesicNet, cls).add_model_specific_args(parent_parser)
+        return parent_parser
+
+    def _process_args(self):
+        try:
+            super()._process_args()
+        except:
+            pass
