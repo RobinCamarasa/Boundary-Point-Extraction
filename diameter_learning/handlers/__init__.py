@@ -3,5 +3,6 @@ from .visualizers import (
     LandmarksVisualizer, GroundTruthVisualizer
     )
 from .metrics import (
-    RelativeDiameterError, DiceCallback, HaussdorffCallback
+    RelativeDiameterError, DiceCallback, HaussdorffCallback,
+    AbsoluteDiameterError
     )

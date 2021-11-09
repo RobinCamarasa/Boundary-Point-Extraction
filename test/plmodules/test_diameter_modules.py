@@ -30,6 +30,7 @@ def test_diameter_module_forward():
         model_moments='[0, 1]',
         loss_consistency_weighting=1,
         loss_center_shift_weighting=1,
+        loss_diameter_weighting=1
         )
     hparams = parser.parse_args([])
 
@@ -71,6 +72,7 @@ def test_diameter_module_train_dataloader():
             model_moments='[0, 1]',
             loss_consistency_weighting=1,
             loss_center_shift_weighting=1,
+            loss_diameter_weighting=1
             )
     hparams = parser.parse_args([])
 
@@ -113,6 +115,7 @@ def test_diameter_module_val_dataloader():
         model_moments='[0, 1]',
         loss_consistency_weighting=1,
         loss_center_shift_weighting=1,
+        loss_diameter_weighting=1
         )
     hparams = parser.parse_args([])
 
@@ -155,6 +158,7 @@ def test_diameter_module_test_dataloader():
         model_moments='[0, 1]',
         loss_consistency_weighting=1,
         loss_center_shift_weighting=1,
+        loss_diameter_weighting=1
         )
     hparams = parser.parse_args([])
 
@@ -197,6 +201,7 @@ def test_diameter_module_training_step():
         model_moments='[0, 1]',
         loss_consistency_weighting=1,
         loss_center_shift_weighting=1,
+        loss_diameter_weighting=1
         )
     hparams = parser.parse_args([])
 
@@ -235,6 +240,7 @@ def test_diameter_module_validation_step():
         model_moments='[0, 1]',
         loss_consistency_weighting=1,
         loss_center_shift_weighting=1,
+        loss_diameter_weighting=1
         )
     hparams = parser.parse_args([])
 
@@ -273,6 +279,7 @@ def test_diameter_module_test_step():
         model_moments='[0, 1]',
         loss_consistency_weighting=1,
         loss_center_shift_weighting=1,
+        loss_diameter_weighting=1
         )
     hparams = parser.parse_args([])
 
@@ -311,6 +318,7 @@ def test_diameter_module_compute_losses():
         model_moments='[0, 1]',
         loss_consistency_weighting=1,
         loss_center_shift_weighting=1,
+        loss_diameter_weighting=1
         )
     hparams = parser.parse_args([])
 

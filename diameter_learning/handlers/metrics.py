@@ -35,7 +35,7 @@ class MetricCallback(Callback):
         self.get_pred = get_pred
         self.values = []
 
-    def compute_metric(pred, gt):
+    def compute_metric(pred, gt, batch):
         pass
 
     def on_test_batch_start(
@@ -60,7 +60,7 @@ class MetricCallback(Callback):
         gt = self.get_gt(batch).detach().cpu()
         self.values.append(
             {
-                "values": self.compute_metric(pred, gt),
+                "values": self.compute_metric(pred, gt, batch),
                 "slice_id": batch[self.slice_id_key][0]
                 }
         )
@@ -105,7 +105,7 @@ class RelativeDiameterError(MetricCallback):
             slice_id_key=slice_id_key,
             )
 
-    def compute_metric(self, pred, gt):
+    def compute_metric(self, pred, gt, batch):
         return (torch.abs(gt.sum() - pred.sum()) / gt.sum()).item()
 
 
@@ -123,7 +123,7 @@ class DiceCallback(MetricCallback):
             slice_id_key=slice_id_key,
             )
 
-    def compute_metric(self, pred, gt):
+    def compute_metric(self, pred, gt, batch):
         return 1 - DiceLoss(reduction=LossReduction.MEAN)(
             pred, gt
             ).item()
@@ -135,6 +135,7 @@ class HaussdorffCallback(MetricCallback):
             get_gt: callable, 
             get_pred: callable,
             slice_id_key: str,
+            spacing_key: str,
             threshold: float = .5
         ):
         super().__init__(
@@ -143,8 +144,32 @@ class HaussdorffCallback(MetricCallback):
             get_pred=get_pred,
             slice_id_key=slice_id_key,
             )
+        self.threshold = threshold
+        self.spacing_key = spacing_key
 
-    def compute_metric(self, pred, gt):
-        lambda pred, gt: compute_hausdorff_distance(
-            pred > threshold, gt
+    def compute_metric(self, pred, gt, batch):
+        return compute_hausdorff_distance(
+            pred > self.threshold, gt
+        )[0][0].item() * batch[self.spacing_key].item()
+
+
+class AbsoluteDiameterError(MetricCallback):
+    def __init__(
+        self, result_path: Path, 
+        get_gt: callable, 
+        get_pred: callable,
+        slice_id_key: str,
+        spacing_key: str,
+        ):
+        super().__init__(
+            result_path=result_path,
+            get_gt=get_gt,
+            get_pred=get_pred,
+            slice_id_key=slice_id_key,
             )
+        self.spacing_key = spacing_key
+
+    def compute_metric(self, pred, gt, batch):
+        return torch.abs(
+            gt.sum() - pred.sum()
+        ).item() * batch[self.spacing_key].item()

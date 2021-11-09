@@ -6,13 +6,10 @@ from torch.utils.data import DataLoader
 from diameter_learning.handlers import (
     RelativeDiameterError, DiceCallback, ImageVisualizer,
     SegmentationVisualizer, LandmarksVisualizer, GroundTruthVisualizer,
-    HaussdorffCallback
+    HaussdorffCallback, AbsoluteDiameterError
     )
 from diameter_learning.settings import MLRUN_PATH
-from diameter_learning.plmodules import (
-    CarotidArteryChallengeDiameterModule,
-    CarotidArteryChallengeDiameterResNet
-    )
+from diameter_learning.plmodules import CarotidArteryChallengeDiameterModule
 
 
 # Parse user input
@@ -51,7 +48,7 @@ get_pred_diam = lambda batch, module: module(
     )[3][:, :, 0]
 get_pred_landmarks = lambda batch, module: module(batch)[1:3]
 slice_id_key = 'slice_id'
-
+spacing_key = 'image_meta_dict_spacing'
 
 trainer = pl.Trainer(
         progress_bar_refresh_rate=1,
@@ -106,7 +103,15 @@ trainer = pl.Trainer(
                 result_path=artifact_path,
                 get_gt=get_gt_seg,
                 get_pred=get_pred_seg,
-                slice_id_key=slice_id_key
+                slice_id_key=slice_id_key,
+                spacing_key=spacing_key
+                ),
+            AbsoluteDiameterError(
+                result_path=artifact_path,
+                get_gt=get_gt_seg,
+                get_pred=get_pred_seg,
+                slice_id_key=slice_id_key,
+                spacing_key=spacing_key
                 )
             ]
         )

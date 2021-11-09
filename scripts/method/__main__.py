@@ -10,6 +10,7 @@ import pytorch_lightning as pl
 from diameter_learning.plmodules import (
     CarotidArteryChallengeDiameterModule
     )
+from pytorch_lightning.callbacks import ModelCheckpoint
 
 
 # Set parser
@@ -51,6 +52,7 @@ trainer = pl.Trainer.from_argparse_args(
         hparams, progress_bar_refresh_rate=1,
         default_root_dir=artifact_path,
         gpus=1,
+        callbacks=[ModelCheckpoint(monitor="validation_dice")]
         )
 trainer.fit(model)
 trainer.test(model)

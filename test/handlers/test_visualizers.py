@@ -45,6 +45,7 @@ def test_segmentation_visualizer():
         model_moments='[0, 1]',
         loss_consistency_weighting=1,
         loss_center_shift_weighting=1,
+        loss_diameter_weighting=1
         )
     hparams = parser.parse_args([])
     model:  CarotidArteryChallengeDiameterModule = \
@@ -118,6 +119,7 @@ def test_ground_truth_visualizer():
         model_moments='[0, 1]',
         loss_consistency_weighting=1,
         loss_center_shift_weighting=1,
+        loss_diameter_weighting=1
         )
     hparams = parser.parse_args([])
     model:  CarotidArteryChallengeDiameterModule = \
@@ -192,6 +194,7 @@ def test_image_visualizer():
         model_moments='[0, 1]',
         loss_consistency_weighting=1,
         loss_center_shift_weighting=1,
+        loss_diameter_weighting=1
         )
     hparams = parser.parse_args([])
     model:  CarotidArteryChallengeDiameterModule = \
@@ -267,6 +270,7 @@ def test_landmarks_visualizer():
         model_moments='[0, 1]',
         loss_consistency_weighting=1,
         loss_center_shift_weighting=1,
+        loss_diameter_weighting=1
         )
     hparams = parser.parse_args([])
     model:  CarotidArteryChallengeDiameterModule = \

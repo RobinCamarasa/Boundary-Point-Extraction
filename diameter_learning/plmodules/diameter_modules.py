@@ -272,7 +272,7 @@ class CarotidArteryChallengeDiameterModule(
 
         # Compute the consistency loss
         consistency_loss = torch.var(radiuses, axis=0).mean()
-        total_loss = diameter_loss +\
+        total_loss = self.hparams.loss_diameter_weighting * diameter_loss +\
             self.hparams.loss_center_shift_weighting * center_shift_loss +\
             self.hparams.loss_consistency_weighting * consistency_loss
 
@@ -303,8 +303,8 @@ class CarotidArteryChallengeDiameterModule(
         dice = 1 - DiceLoss(reduction=LossReduction.MEAN)(
                 self(batch)[0][:, :, :, :, 0],
                 batch['gt_lumen_processed_contour']
-                ).item()
-        self.log('validation_dice', dice, on_epoch=True)
+                )
+        self.log('validation_dice', dice, on_epoch=True, on_step=False)
         self.log('validation_diameter_loss', losses[0].item(), on_epoch=True)
         self.log(
             'validation_center_shift_loss', losses[1].item(), on_epoch=True
@@ -313,7 +313,6 @@ class CarotidArteryChallengeDiameterModule(
             'validation_consistency_loss', losses[2].item(), on_epoch=True
             )
         self.log('validation_loss', losses[3].item(), on_epoch=True)
-        self.log('validation_dice', losses[3].item(), on_epoch=True)
         return losses[3]
 
     def test_step(self, batch, batch_idx) -> DataLoader:
@@ -344,6 +343,7 @@ class CarotidArteryChallengeDiameterModule(
         parser.add_argument('--model_sigma', type=float)
         parser.add_argument('--loss_center_shift_weighting', type=float)
         parser.add_argument('--loss_consistency_weighting', type=float)
+        parser.add_argument('--loss_diameter_weighting', type=float)
         return parent_parser
 
     def _process_args(self):

@@ -8,7 +8,7 @@ entry_points:
   method_training:
     parameters:
       experiment_seed: {type: int, default: 5}
-      num_fold: {type: int, default: 5}
+      num_fold: {type: int, default: 4}
       seed: {type: int, default: 5}
       lr: {type: float, default: 0.0001}
       image_dimension_x: {type: int, default: 768}
@@ -20,6 +20,7 @@ entry_points:
       model_sigma: {type: float, default: 0.15}
       model_nb_radiuses: {type: int, default: 24}
       model_moments: {type: int, default: '[0, 1]'}
+      loss_diameter_weighting: {type: float, default: 1}
       loss_consistency_weighting: {type: float, default: 100}
       loss_center_shift_weighting: {type: float, default: 10}
       max_epochs: {type: int, default: 300}
@@ -37,11 +38,12 @@ entry_points:
         --model_sigma {model_sigma}
         --model_nb_radiuses {model_nb_radiuses}
         --model_moments {model_moments}
+        --loss_diameter_weighting {loss_consistency_weighting}
         --loss_consistency_weighting {loss_consistency_weighting}
         --loss_center_shift_weighting {loss_center_shift_weighting}
         --max_epochs {max_epochs}
         --deterministic True
-        --log_every_n_steps 1
+        --log_every_n_steps 5
       "
   method_evaluation:
     parameters:
