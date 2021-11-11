@@ -6,5 +6,5 @@ from .dictionnary import (
     )
 
 from .array import (
-    ControlPointPostprocess
+    ControlPointPostprocess, SegmentationToDiameter
     )

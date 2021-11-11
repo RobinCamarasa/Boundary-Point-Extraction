@@ -35,3 +35,9 @@ method: data/care_ii_challenge/preprocessed
 
 method_evaluation: data/care_ii_challenge/preprocessed
 	mlflow run --experiment-name method_evaluation -e method_evaluation ./ --no-conda $(TEST_OPT)
+
+geodesic: data/care_ii_challenge/preprocessed
+	mlflow run --experiment-name geodesic_training -e geodesic_training ./ --no-conda $(TRAIN_OPT)
+
+geodesic_evaluation: data/care_ii_challenge/preprocessed
+	mlflow run --experiment-name geodesic_evaluation -e geodesic_evaluation ./ --no-conda $(TEST_OPT)

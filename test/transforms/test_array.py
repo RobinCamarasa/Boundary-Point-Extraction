@@ -3,7 +3,11 @@ from itertools import product
 import shutil
 import numpy as np
 import matplotlib.pyplot as plt
-from diameter_learning.transforms import ControlPointPostprocess
+from skimage.draw import ellipse
+from scipy.ndimage import gaussian_filter
+from diameter_learning.transforms import (
+    ControlPointPostprocess, SegmentationToDiameter 
+    )
 from diameter_learning.settings import TEST_OUTPUT_PATH
 
 
@@ -62,3 +66,39 @@ def test_control_point_postprocess():
             )
         plt.plot(contours[nb, nf, :, 0, nz], contours[nb, nf, :, 1, nz])
         plt.savefig(TEST_OUTPUT_PATH / f'nb_{nb}_nf_{nf}_nz_{nz}.png')
+
+
+def test_segmentation_to_diameter():
+    """Test SegmentationToDiameter class"""
+    shutil.rmtree(TEST_OUTPUT_PATH, ignore_errors=True)
+    TEST_OUTPUT_PATH.mkdir()
+
+    # Generate segmentation
+    segmentation = np.zeros((64, 128))
+    rows, centers = ellipse(32, 28, 20, 10)
+    segmentation[rows, centers] = 1
+    segmentation = gaussian_filter(
+        segmentation, sigma=(5, 5)
+    )
+    segmentation = np.expand_dims(
+        np.expand_dims(segmentation, 0), 0
+        )
+
+    # Launch segmentation in the transform
+    segmentation_to_diameter = SegmentationToDiameter(
+        threshold=.5
+        )
+    diameters = segmentation_to_diameter(segmentation, 5)
+    assert diameters.shape == (1, 1, 1)
+    assert (diameters[0, 0, 0] - 171.2) < 0.01
+
+    # Visual assessment
+    fig, ax = plt.subplots(nrows=1, ncols=2)
+    ax = ax.ravel()
+    ax[0].imshow(segmentation[0, 0])
+    ax[1].imshow(segmentation[0, 0] > .5)
+    ax[1].scatter(
+        [28, 28],
+        [32 - diameters[0, 0, 0]/10, 32 + diameters[0, 0, 0] / 10]
+        )
+    plt.savefig(TEST_OUTPUT_PATH / f'segmentation.png', dpi=300)

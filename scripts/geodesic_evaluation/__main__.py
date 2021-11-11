@@ -9,7 +9,7 @@ from diameter_learning.handlers import (
     HaussdorffCallback, AbsoluteDiameterError
     )
 from diameter_learning.settings import MLRUN_PATH
-from diameter_learning.plmodules import CarotidArteryChallengeDiameterModule
+from baselines.geodesic.plmodules import CarotidArteryChallengeGeodesicNet
 
 
 # Parse user input
@@ -26,7 +26,7 @@ artifact_path: Path = Path(
 # Load model
 experiment_path = list(MLRUN_PATH.glob(f'**/{params.run_id}'))[0]
 checkpoint_path = list(experiment_path.glob('**/epoch=*.ckpt'))[0]
-model = CarotidArteryChallengeDiameterModule.load_from_checkpoint(
+model = CarotidArteryChallengeGeodesicNet.load_from_checkpoint(
     str(checkpoint_path)
     )
 model.hparams.training_cache_rate=0
@@ -39,13 +39,8 @@ get_gt_diam = lambda batch: batch['gt_lumen_processed_diameter']
 get_gt_landmarks = lambda batch: batch['gt_lumen_processed_landmarks']
 get_pred_seg = lambda batch, module: module(
     batch
-    )[0][:, :, :, :, 0]
-get_pred_diam = lambda batch, module: module(
-    batch
-    )[3][:, :, 0]
-get_pred_diam = lambda batch, module: module(
-    batch
-    )[3][:, :, 0]
+    )[:, [1], :, :]
+# TODO: Implement
 get_pred_landmarks = lambda batch, module: module(batch)[1:3]
 slice_id_key = 'slice_id'
 spacing_key = 'image_meta_dict_spacing'
@@ -55,12 +50,12 @@ trainer = pl.Trainer(
         default_root_dir=artifact_path,
         gpus=1,
         callbacks=[
-            RelativeDiameterError(
-                result_path=artifact_path,
-                get_gt=get_gt_diam,
-                get_pred=get_pred_diam,
-                slice_id_key=slice_id_key
-                ),
+            # RelativeDiameterError(
+            #     result_path=artifact_path,
+            #     get_gt=get_gt_diam,
+            #     get_pred=get_pred_diam,
+            #     slice_id_key=slice_id_key
+            #     ),
             DiceCallback(
                 result_path=artifact_path,
                 get_gt=get_gt_seg,
@@ -71,14 +66,6 @@ trainer = pl.Trainer(
                 result_path=artifact_path,
                 get_pred=None,
                 get_gt=None,
-                get_input=get_input,
-                slice_id_key=slice_id_key,
-                number_of_images=None
-                ),
-            LandmarksVisualizer(
-                result_path=artifact_path,
-                get_pred=get_pred_landmarks,
-                get_gt=get_gt_landmarks,
                 get_input=get_input,
                 slice_id_key=slice_id_key,
                 number_of_images=None
@@ -106,13 +93,13 @@ trainer = pl.Trainer(
                 slice_id_key=slice_id_key,
                 spacing_key=spacing_key
                 ),
-            AbsoluteDiameterError(
-                result_path=artifact_path,
-                get_gt=get_gt_diam,
-                get_pred=get_gt_diam,
-                slice_id_key=slice_id_key,
-                spacing_key=spacing_key
-                )
+            # AbsoluteDiameterError(
+            #     result_path=artifact_path,
+            #     get_gt=get_gt_diam,
+            #     get_pred=get_pred_diam,
+            #     slice_id_key=slice_id_key,
+            #     spacing_key=spacing_key
+            #     )
             ]
         )
 
