@@ -13,15 +13,19 @@ class TransformToGeodesicMapd(MapTransform):
     :param keys: Keys to transform
     :param image_key: Key of the image
     :param suffix: Suffix of the generated key
+    :param tolerance: Extra voxels in the disk radius
     """
     def __init__(
-            self, keys: Union[str, Sequence[str]] = ['gt_lumen_processed_landmarks'],
+            self,
+            keys: Union[str, Sequence[str]] = ['gt_lumen_processed_landmarks'],
             image_key: str = 'image',
             suffix: str = '_geodesic',
+            tolerance: int = 2
     ):
         super().__init__(keys)
         self.image_key = image_key
         self.suffix = suffix
+        self.tolerance = tolerance
 
     def __call__(self, data: dict) -> dict:
         """Method called to crop the correct part of the image
@@ -42,13 +46,16 @@ class TransformToGeodesicMapd(MapTransform):
                         dtype=int).tolist()
                     )
                 )
+            disk_radius = int(
+                np.linalg.norm(data[key][0, 0] - data[key][0, 1])
+                ) / 2 + self.tolerance
             rows_circle, columns_circle = disk(
                 tuple(
                     np.array(
                         data[key][0].mean(0), dtype=int
                         ).tolist()
                     ),
-                    int(np.linalg.norm(data[key][0, 0] - data[key][0, 1]))/2
+                disk_radius
                 )
             # Draw the line in the foreground
             data[post_process_key][1, rows_line, columns_line] = 1.

@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from skimage.draw import ellipse
 from scipy.ndimage import gaussian_filter
+import torch
 from diameter_learning.transforms import (
     ControlPointPostprocess, SegmentationToDiameter 
     )
@@ -83,14 +84,16 @@ def test_segmentation_to_diameter():
     segmentation = np.expand_dims(
         np.expand_dims(segmentation, 0), 0
         )
+    segmentation_torch = torch.from_numpy(segmentation).cpu()
 
     # Launch segmentation in the transform
     segmentation_to_diameter = SegmentationToDiameter(
         threshold=.5
         )
-    diameters = segmentation_to_diameter(segmentation, 5)
+    diameters = segmentation_to_diameter(segmentation_torch)
+    import ipdb; ipdb.set_trace() ###!!!BREAKPOINT!!!
     assert diameters.shape == (1, 1, 1)
-    assert (diameters[0, 0, 0] - 171.2) < 0.01
+    assert (diameters[0, 0, 0] - 34.2)**2 < 0.01
 
     # Visual assessment
     fig, ax = plt.subplots(nrows=1, ncols=2)
@@ -99,6 +102,6 @@ def test_segmentation_to_diameter():
     ax[1].imshow(segmentation[0, 0] > .5)
     ax[1].scatter(
         [28, 28],
-        [32 - diameters[0, 0, 0]/10, 32 + diameters[0, 0, 0] / 10]
+        [32 - diameters[0, 0, 0] / 2, 32 + diameters[0, 0, 0] / 2]
         )
     plt.savefig(TEST_OUTPUT_PATH / f'segmentation.png', dpi=300)

@@ -7,6 +7,7 @@ from skimage.draw import polygon
 from scipy import interpolate
 import numpy as np
 from monai.transforms import Transform
+import torch
 
 
 class ControlPointPostprocess(Transform):
@@ -94,8 +95,7 @@ class SegmentationToDiameter(Transform):
         self.threshold = threshold
 
     def __call__(
-        self, segmentation: np.array,
-        spacing
+        self, segmentation: np.array
     ) -> Tuple[np.array, np.array, np.array]:
         """Method called to post-process the segmentation into a diameter
         in this documentation: nb means batch size,
@@ -107,12 +107,13 @@ class SegmentationToDiameter(Transform):
         :param spacing: Physical spacing of a voxel
         :return: Diameters of shape array of shape (nb, nf, 1)
         """
-        nb, nf, nx, ny = segmentation.shape
-        thresholded_segmentation = segmentation > self.threshold
+        seg_array = segmentation.cpu().detach().numpy()
+        nb, nf, nx, ny = seg_array.shape
+        thresholded_seg_array = seg_array > self.threshold
         diameters = np.zeros((nb, nf, 1))
         for batch, feature in product(range(nb), range(nf)):
             x_indices, y_indices = np.where(
-                thresholded_segmentation[batch, feature] == 1
+                thresholded_seg_array[batch, feature] == 1
                 )
             x_matrix = np.matmul(
                 np.ones((x_indices.shape[0], 1)),
@@ -128,14 +129,16 @@ class SegmentationToDiameter(Transform):
             )
             
             point_1, point_2 = np.unravel_index(
-                    np.argmax(distance), distance.shape
-                    )
+                np.argmax(distance), distance.shape
+                )
             diameters[batch, feature] = np.linalg.norm(
                     np.array(
                         [
                             x_indices[point_1] - x_indices[point_2],
                             y_indices[point_1] - y_indices[point_2]
                             ]
-                        ) * spacing
+                        )
                     )
-        return diameters
+        return torch.from_numpy(diameters).to(
+            segmentation.device
+            )

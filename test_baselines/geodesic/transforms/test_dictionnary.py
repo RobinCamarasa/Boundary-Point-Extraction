@@ -39,7 +39,10 @@ def test_transform_to_geodesic_mapd():
                 CropImageCarotidChallenge(
                     ["image", "gt_lumen_processed_contour"]
                     ),
-                TransformToGeodesicMapd('gt_lumen_processed_landmarks')
+                TransformToGeodesicMapd(
+                    'gt_lumen_processed_landmarks',
+                    tolerance=4
+                    )
                 ]
             ),
         seed=0,
@@ -55,11 +58,10 @@ def test_transform_to_geodesic_mapd():
     fig, ax = plt.subplots(nrows=1, ncols=3)
     ax = ax.ravel()
     ax[0].imshow(element['image'][0], cmap='gray')
-    for i, ax_ in enumerate(ax[1:]):
-        mask = element[
-            'gt_lumen_processed_landmarks_geodesic'
-            ][i]
-        ax_.imshow(mask, cmap='Reds')
+
+    mask = element['gt_lumen_processed_landmarks_geodesic']
+    ax[1].imshow(mask[0], cmap='Reds')
+    ax[2].imshow(mask[1] + mask[0], cmap='Reds')
     plt.savefig(TEST_OUTPUT_PATH / 'visual_example', dpi=300)
     assert element[
         'gt_lumen_processed_landmarks_geodesic'
