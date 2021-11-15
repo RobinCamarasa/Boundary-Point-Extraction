@@ -22,7 +22,7 @@ entry_points:
       model_moments: {type: int, default: '[0, 1]'}
       loss_diameter_weighting: {type: float, default: 1}
       loss_consistency_weighting: {type: float, default: 100}
-      loss_center_shift_weighting: {type: float, default: 10}
+      loss_center_shift_weighting: {type: float, default: 1}
       max_epochs: {type: int, default: 300}
     command: "export PYTHONPATH=\"$(pwd)\" && python scripts/method/__main__.py
         --num_fold {num_fold}
@@ -62,6 +62,7 @@ entry_points:
       validation_folds: {type: str, default: '[1]'}
       batch_size: {type: int, default: 30}
       max_epochs: {type: int, default: 300}
+      tolerance: {type: float, default: 4}
     command: "export PYTHONPATH=\"$(pwd)\" && python scripts/geodesic/__main__.py
         --num_fold {num_fold}
         --seed {seed}
@@ -73,6 +74,7 @@ entry_points:
         --test_folds {test_folds}
         --validation_folds {validation_folds}
         --batch_size {batch_size}
+        --tolerance {tolerance}
         --max_epochs {max_epochs}
         --deterministic True
         --log_every_n_steps 5

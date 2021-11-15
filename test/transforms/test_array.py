@@ -91,7 +91,6 @@ def test_segmentation_to_diameter():
         threshold=.5
         )
     diameters = segmentation_to_diameter(segmentation_torch)
-    import ipdb; ipdb.set_trace() ###!!!BREAKPOINT!!!
     assert diameters.shape == (1, 1, 1)
     assert (diameters[0, 0, 0] - 34.2)**2 < 0.01
 

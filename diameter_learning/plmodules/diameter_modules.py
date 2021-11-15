@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 from monai.transforms import (
     LoadImaged, SpatialPadd, AsChannelFirstd, AddChanneld,
-    ToTensord
+    ToTensord, NormalizeIntensityd 
     )
 from monai.networks.nets import BasicUNet, UNet
 from monai.losses import DiceLoss
@@ -52,6 +52,7 @@ class CarotidArteryChallengeModule():
             LoadVoxelSized("image_meta_dict"),
             PopKeysd("image_meta_dict"),
             AsChannelFirstd("image"),
+            NormalizeIntensityd("image"),
             LoadCarotidChallengeAnnotations("gt"),
             AddChanneld(
                 [
@@ -304,7 +305,7 @@ class CarotidArteryChallengeDiameterModule(
                 self(batch)[0][:, :, :, :, 0],
                 batch['gt_lumen_processed_contour']
                 )
-        self.log('validation_dice', dice, on_epoch=True, on_step=False)
+        self.log('validation_dice', dice, on_epoch=True)
         self.log('validation_diameter_loss', losses[0].item(), on_epoch=True)
         self.log(
             'validation_center_shift_loss', losses[1].item(), on_epoch=True

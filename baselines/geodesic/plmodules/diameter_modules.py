@@ -41,7 +41,10 @@ class CarotidArteryChallengeGeodesicNet(
         super()._set_transform_toolchain()
         # Modify post-process
         self.postprocess_transforms = [
-            TransformToGeodesicMapd("gt_lumen_processed_landmarks"),
+            TransformToGeodesicMapd(
+                "gt_lumen_processed_landmarks",
+                tolerance=self.hparams.tolerance
+                ),
             ToTensord(
                 [
                     "image", "gt_lumen_processed_diameter",
@@ -138,6 +141,8 @@ class CarotidArteryChallengeGeodesicNet(
         :param cls: Class
         """
         parent_parser = super(CarotidArteryChallengeGeodesicNet, cls).add_model_specific_args(parent_parser)
+        parser = parent_parser.add_argument_group("DiameterLearningModule")
+        parser.add_argument('--tolerance', type=float)
         return parent_parser
 
     def _process_args(self):

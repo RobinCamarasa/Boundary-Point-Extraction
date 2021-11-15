@@ -22,7 +22,8 @@ def test_geodesic_module_forward():
         training_cache_rate=0,
         test_folds='[4]',
         validation_folds='[3]',
-        batch_size=5
+        batch_size=5,
+        tolerance=4
         )
     hparams = parser.parse_args([])
 
@@ -55,7 +56,8 @@ def test_geodesic_module_training_step():
         training_cache_rate=0,
         test_folds='[4]',
         validation_folds='[3]',
-        batch_size=5
+        batch_size=5,
+        tolerance=4
         )
     hparams = parser.parse_args([])
 
@@ -88,7 +90,8 @@ def test_geodesic_module_validation_step():
         training_cache_rate=0,
         test_folds='[4]',
         validation_folds='[3]',
-        batch_size=5
+        batch_size=5,
+        tolerance=4
         )
     hparams = parser.parse_args([])
 
@@ -121,7 +124,8 @@ def test_geodesic_module_test_step():
         training_cache_rate=0,
         test_folds='[4]',
         validation_folds='[3]',
-        batch_size=5
+        batch_size=5,
+        tolerance=4
         )
     hparams = parser.parse_args([])
 
@@ -154,7 +158,8 @@ def test_geodesic_module_compute_losses():
         training_cache_rate=0,
         test_folds='[4]',
         validation_folds='[3]',
-        batch_size=5
+        batch_size=5,
+        tolerance=4
         )
     hparams = parser.parse_args([])
 
