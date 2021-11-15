@@ -17,6 +17,7 @@ parser = argparse.ArgumentParser(
 	description='Analyse experiment'
 	)
 parser.add_argument('--run_id', type=str)
+parser.add_argument('--metric', type=str)
 params = parser.parse_args()
 
 artifact_path: Path = Path(
@@ -25,7 +26,9 @@ artifact_path: Path = Path(
 
 # Load model
 experiment_path = list(MLRUN_PATH.glob(f'**/{params.run_id}'))[0]
-checkpoint_path = list(experiment_path.glob('**/epoch=*.ckpt'))[0]
+checkpoint_path = list(
+    experiment_path.glob(f'**/*{params.metric}*.ckpt')
+    )[0]
 model = CarotidArteryChallengeDiameterModule.load_from_checkpoint(
     str(checkpoint_path)
     )
@@ -109,7 +112,7 @@ trainer = pl.Trainer(
             AbsoluteDiameterError(
                 result_path=artifact_path,
                 get_gt=get_gt_diam,
-                get_pred=get_gt_diam,
+                get_pred=get_pred_diam,
                 slice_id_key=slice_id_key,
                 spacing_key=spacing_key
                 )

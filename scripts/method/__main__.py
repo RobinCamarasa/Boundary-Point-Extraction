@@ -52,7 +52,16 @@ trainer = pl.Trainer.from_argparse_args(
         hparams, progress_bar_refresh_rate=1,
         default_root_dir=artifact_path,
         gpus=1,
-        callbacks=[ModelCheckpoint(monitor="validation_dice")]
+        callbacks=[
+            ModelCheckpoint(
+                monitor="validation_dice",
+                filename='{epoch:02d}-{validation_dice:.2f}'
+                ),
+            ModelCheckpoint(
+                monitor="validation_loss",
+                filename='{epoch:02d}-{validation_loss:.2f}'
+                ),
+            ]
         )
 trainer.fit(model)
 trainer.test(model)

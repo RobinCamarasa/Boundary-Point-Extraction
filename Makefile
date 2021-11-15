@@ -1,4 +1,4 @@
-.PHONY: data_unzip, data_repo, tests, preprocess, stats, delete_experiements method method_evaluation
+.PHONY: data_unzip, data_repo, tests, preprocess, stats, delete_experiements method method_evaluation, geodesic, geodesic_evaluation, full_supervision, full_supervision_evaluation
 
 PP = PYTHONPATH="$(shell pwd)"
 TRAIN_OPT = -P "test_folds=[1]" -P "validation_folds=[2]" -P "seed=5"
@@ -41,3 +41,9 @@ geodesic: data/care_ii_challenge/preprocessed
 
 geodesic_evaluation: data/care_ii_challenge/preprocessed
 	mlflow run --experiment-name geodesic_evaluation -e geodesic_evaluation ./ --no-conda $(TEST_OPT)
+
+full_supervision: data/care_ii_challenge/preprocessed
+	mlflow run --experiment-name full_supervision_training -e full_supervision_training ./ --no-conda $(TRAIN_OPT)
+
+full_supervision_evaluation: data/care_ii_challenge/preprocessed
+	mlflow run --experiment-name full_supervision_evaluation -e full_supervision_evaluation ./ --no-conda $(TEST_OPT)

@@ -7,8 +7,8 @@ import torch
 import mlflow
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
-from baselines.geodesic.plmodules import (
-    CarotidArteryChallengeGeodesicNet
+from baselines.full_supervision.plmodules import (
+    CarotidArteryFullSupervisionNet
     )
 
 
@@ -20,13 +20,13 @@ parser = argparse.ArgumentParser(
 child_parser = parser.add_argument_group("Experiment parameters")
 child_parser.add_argument('--experiment_seed', type=int)
 parser = pl.Trainer.add_argparse_args(parser)
-parser = CarotidArteryChallengeGeodesicNet.add_model_specific_args(
+parser = CarotidArteryFullSupervisionNet.add_model_specific_args(
     parser
     )
 hparams = parser.parse_args()
 
 # Log mlflow
-mlflow.set_tag('experiment', 'geodesic')
+mlflow.set_tag('experiment', 'full_supervision')
 
 # Set experiment seed
 random.seed(hparams.experiment_seed)
@@ -37,8 +37,8 @@ torch.cuda.manual_seed_all(hparams.experiment_seed)
 
 # Create module
 artifact_path = mlflow.get_artifact_uri().split('file://')[-1]
-model: CarotidArteryChallengeGeodesicNet \
-    = CarotidArteryChallengeGeodesicNet(
+model: CarotidArteryFullSupervisionNet \
+    = CarotidArteryFullSupervisionNet(
         hparams
         )
 

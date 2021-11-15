@@ -48,7 +48,11 @@ entry_points:
   method_evaluation:
     parameters:
       run_id: {type: str}
-    command: "export PYTHONPATH=\"$(pwd)\" && python scripts/method_evaluation/__main__.py --run_id {run_id}"
+      metric: {type: str}
+    command: "export PYTHONPATH=\"$(pwd)\" && python scripts/method_evaluation/__main__.py
+      --run_id {run_id}
+      --metric {metric}
+      "
   geodesic_training:
     parameters:
       experiment_seed: {type: int, default: 5}
@@ -82,4 +86,46 @@ entry_points:
   geodesic_evaluation:
     parameters:
       run_id: {type: str}
-    command: "export PYTHONPATH=\"$(pwd)\" && python scripts/geodesic_evaluation/__main__.py --run_id {run_id}"
+      metric: {type: str}
+    command: "export PYTHONPATH=\"$(pwd)\" && python scripts/geodesic_evaluation/__main__.py
+      --run_id {run_id}
+      --metric {metric}
+      "
+  full_supervision_training:
+    parameters:
+      experiment_seed: {type: int, default: 5}
+      num_fold: {type: int, default: 4}
+      seed: {type: int, default: 5}
+      lr: {type: float, default: 0.0001}
+      image_dimension_x: {type: int, default: 768}
+      image_dimension_y: {type: int, default: 160}
+      training_cache_rate: {type: int, default: 1}
+      test_folds: {type: str, default: '[0]'}
+      validation_folds: {type: str, default: '[1]'}
+      batch_size: {type: int, default: 30}
+      max_epochs: {type: int, default: 300}
+      tolerance: {type: float, default: 4}
+    command: "export PYTHONPATH=\"$(pwd)\" && python scripts/full_supervision/__main__.py
+        --num_fold {num_fold}
+        --seed {seed}
+        --experiment_seed {experiment_seed}
+        --lr {lr}
+        --image_dimension_x {image_dimension_x}
+        --image_dimension_y {image_dimension_y}
+        --training_cache_rate {training_cache_rate}
+        --test_folds {test_folds}
+        --validation_folds {validation_folds}
+        --batch_size {batch_size}
+        --tolerance {tolerance}
+        --max_epochs {max_epochs}
+        --deterministic True
+        --log_every_n_steps 5
+      "
+  full_supervision_evaluation:
+    parameters:
+      run_id: {type: str}
+      metric: {type: str}
+    command: "export PYTHONPATH=\"$(pwd)\" && python scripts/full_supervision_evaluation/__main__.py
+      --run_id {run_id}
+      --metric {metric}
+      "
