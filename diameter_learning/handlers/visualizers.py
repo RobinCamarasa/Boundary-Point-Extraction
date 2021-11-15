@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from diameter_learning.transforms import ControlPointPostprocess
 
+
 class VisualizerCallback(Callback):
     def __init__(
             self, result_path: Path,
