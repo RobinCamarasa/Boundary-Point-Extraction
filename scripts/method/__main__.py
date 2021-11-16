@@ -55,11 +55,13 @@ trainer = pl.Trainer.from_argparse_args(
         callbacks=[
             ModelCheckpoint(
                 monitor="validation_dice",
-                filename='{epoch:02d}-{validation_dice:.2f}'
+                filename='{epoch:02d}-{validation_dice:.2f}',
+                mode='max'
                 ),
             ModelCheckpoint(
                 monitor="validation_loss",
-                filename='{epoch:02d}-{validation_loss:.2f}'
+                filename='{epoch:02d}-{validation_loss:.2f}',
+                mode='min'
                 ),
             ]
         )
