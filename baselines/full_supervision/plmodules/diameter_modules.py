@@ -89,7 +89,7 @@ class CarotidArteryFullSupervisionNet(
         """
         loss = self.compute_losses(batch, batch_idx)
         dice = 1 - DiceLoss(reduction=LossReduction.MEAN)(
-            self(batch)[:, [0]],
+            self(batch)[:, [1]],
             batch['gt_lumen_processed_contour']
             )
         self.log('validation_dice', dice, on_epoch=True)

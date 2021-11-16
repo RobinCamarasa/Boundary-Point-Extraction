@@ -43,11 +43,10 @@ get_gt_diam = lambda batch: batch['gt_lumen_processed_diameter']
 get_gt_landmarks = lambda batch: batch['gt_lumen_processed_landmarks']
 get_pred_seg = lambda batch, module: module(
     batch
-    )[:, [0]]
+    )[:, [1]]
 get_pred_diam = lambda batch, module: segmentation_to_diameter(
-    module(batch)[:, [0]]
+    module(batch)[:, [1]]
 )
-get_pred_landmarks = lambda batch, module: module(batch)[1:3]
 slice_id_key = 'slice_id'
 spacing_key = 'image_meta_dict_spacing'
 

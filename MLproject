@@ -20,7 +20,7 @@ entry_points:
       model_sigma: {type: float, default: 0.15}
       model_nb_radiuses: {type: int, default: 24}
       model_moments: {type: int, default: '[0, 1]'}
-      loss_diameter_weighting: {type: float, default: 1}
+      loss_diameter_weighting: {type: float, default: 10}
       loss_consistency_weighting: {type: float, default: 100}
       loss_center_shift_weighting: {type: float, default: 1}
       max_epochs: {type: int, default: 300}
