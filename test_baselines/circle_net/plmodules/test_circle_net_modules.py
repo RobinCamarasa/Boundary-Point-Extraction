@@ -3,7 +3,7 @@ from torch.utils.data import DataLoader
 from baselines.circle_net.plmodules import CarotidArteryChallengeCircleNet
 
 
-def test_geodesic_module_forward():
+def test_circle_net_module_forward():
     """Test forward method"""
     parser = argparse.ArgumentParser(
         description='Process hyperparameters'
@@ -20,7 +20,26 @@ def test_geodesic_module_forward():
         training_cache_rate=0,
         test_folds='[4]',
         validation_folds='[3]',
-        batch_size=5
+        batch_size=5,
+
+        # CircleNet options
+        hm_weight=1,
+        off_weight=1,
+        wh_weight=0.1,
+        mse_loss='False',
+        cat_spec_wh='False',
+        dense_wh='False',
+        norm_wh='True',
+
+        reg_loss='l1',
+        reg_offset='True',
+
+        center_thresh=0.1,
+        eval_oracle_hm=True,
+        eval_oracle_offset=True,
+        eval_oracle_wh=True,
+        num_stacks=1,
+        device='cuda',
         )
     hparams = parser.parse_args([])
 
@@ -33,4 +52,6 @@ def test_geodesic_module_forward():
     segmentation = module(
         example_batch
         )
-    assert segmentation.shape == (5, 3, 384, 160)
+    assert set(segmentation.keys()) == {
+        'heatmap', 'radius', 'offset'
+        }
