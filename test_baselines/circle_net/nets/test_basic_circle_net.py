@@ -21,4 +21,3 @@ def test_basic_circle_net():
     outputs = circle_net(tensor)
     assert outputs['radius'].shape == (3, 3, 32, 32)
     assert outputs['heatmap'].shape == (3, 1, 32, 32)
-    assert outputs['offset'].shape == (3, 2, 32, 32)

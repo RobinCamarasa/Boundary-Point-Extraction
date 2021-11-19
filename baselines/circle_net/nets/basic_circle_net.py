@@ -51,14 +51,6 @@ class BasicCircleNet(BasicUNet):
             fea[5], out_channels_radius, kernel_size=1
             )
 
-        # Define offset path
-        self.upcat_1_offset = UpCat(
-            spatial_dims, fea[1], fea[0], fea[5],
-            act, norm, bias, dropout, upsample, halves=False
-            )
-        self.final_conv_offset = Conv["conv", spatial_dims](
-            fea[5], out_channels_offset, kernel_size=1
-            )
 
     def forward(self, x: torch.Tensor):
         x0 = self.conv_0(x)
@@ -80,12 +72,7 @@ class BasicCircleNet(BasicUNet):
         u1_radius = self.upcat_1_radius(u2, x0)
         logits_radius = self.final_conv_radius(u1_radius)
 
-        # Define offset path
-        u1_offset = self.upcat_1_offset(u2, x0)
-        logits_offset = self.final_conv_offset(u1_offset)
-
         return {
             "heatmap": logits_heatmaps,
             "radius": logits_radius,
-            "offset": logits_offset
         }
