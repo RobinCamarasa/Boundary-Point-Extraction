@@ -1,3 +1,0 @@
-[submodule "baselines/circle_net/CircleNet"]
-	path = baselines/circle_net/CircleNet
-	url = https://github.com/hrlblab/CircleNet
