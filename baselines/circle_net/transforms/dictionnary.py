@@ -66,7 +66,7 @@ class TransformToCircleNetMaps(MapTransform):
             0, 
             int(centroid[0, 0]),
             int(centroid[0, 1]),
-            ] = data[self.diameter_key][0][0]
+            ] = data[self.diameter_key][0][0] / 2
         data[self.radius_mask_key] = 1.0 * (data[self.radius_key] > 0)
         return data
 
