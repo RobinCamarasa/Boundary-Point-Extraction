@@ -1,8 +1,12 @@
 """Test `diameter_learning.plmodules.diameter_modules`
 """
+import shutil
 import argparse
+from itertools import product
+import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from baselines.geodesic.plmodules import CarotidArteryChallengeGeodesicNet
+from diameter_learning.settings import TEST_OUTPUT_PATH
 
 
 def test_geodesic_module_forward():
@@ -143,6 +147,8 @@ def test_geodesic_module_test_step():
 
 def test_geodesic_module_compute_losses():
     """Test compute_losses"""
+    shutil.rmtree(TEST_OUTPUT_PATH, ignore_errors=True)
+    TEST_OUTPUT_PATH.mkdir()
     parser = argparse.ArgumentParser(
             description='Process hyperparameters'
         )
@@ -167,7 +173,32 @@ def test_geodesic_module_compute_losses():
     module: CarotidArteryChallengeGeodesicNet \
         = CarotidArteryChallengeGeodesicNet(
             hparams
-        )
+        ).cuda()
     example_batch = next(iter(module.train_dataloader()))
+    example_batch['gt_lumen_processed_landmarks_geodesic'] = example_batch[
+        'gt_lumen_processed_landmarks_geodesic'
+        ].cuda()
+    example_batch['image'] = example_batch['image'].cuda()
+    gt = example_batch['gt_lumen_processed_landmarks_geodesic'].long().detach().cpu().numpy()
+    plt.clf()
+    plt.imshow(gt[0, 0])
+    plt.savefig(TEST_OUTPUT_PATH / 'gt_0.png')
+    plt.clf()
+    plt.imshow(gt[0, 1])
+    plt.savefig(TEST_OUTPUT_PATH / 'gt_1.png')
+    plt.clf()
+    plt.imshow(gt[0, 0] + gt[0, 1] + 12 * (1 - (gt[0, 1] + gt[0, 0])))
+    plt.savefig(TEST_OUTPUT_PATH / 'gt_2.png')
+    def plot_grad(module, grad_input, grad_output):
+        for i, j in product(
+            range(grad_output[0].shape[0]), range(grad_output[0].shape[1])
+            ):
+            plt.clf()
+            plt.imshow(grad_output[0][i, j].detach().cpu().numpy())
+            plt.colorbar()
+            plt.savefig(TEST_OUTPUT_PATH / f'grad_{i}_{j}.png')
+    module.model.final_conv.register_backward_hook(plot_grad)
     loss = module.compute_losses(example_batch, 0)
+    loss.backward()
     assert loss.shape == tuple()
+

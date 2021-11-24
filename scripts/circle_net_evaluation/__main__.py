@@ -9,14 +9,15 @@ from diameter_learning.handlers import (
     HaussdorffCallback, AbsoluteDiameterError
     )
 from diameter_learning.settings import MLRUN_PATH
-from baselines.geodesic.plmodules import CarotidArteryChallengeGeodesicNet
+from baselines.circle_net.plmodules import CarotidArteryChallengeCircleNet
 from diameter_learning.transforms import SegmentationToDiameter
+from baselines.circle_net.transforms import CircleNetToSegmentation
 
 
 # Parse user input
 parser = argparse.ArgumentParser(
-    description='Analyse experiment'
-    )
+	description='Analyse experiment'
+	)
 parser.add_argument('--run_id', type=str)
 parser.add_argument('--metric', type=str)
 params = parser.parse_args()
@@ -30,24 +31,26 @@ experiment_path = list(MLRUN_PATH.glob(f'**/{params.run_id}'))[0]
 checkpoint_path = list(
     experiment_path.glob(f'**/*{params.metric}*.ckpt')
     )[0]
-model = CarotidArteryChallengeGeodesicNet.load_from_checkpoint(
+model = CarotidArteryChallengeCircleNet.load_from_checkpoint(
     str(checkpoint_path)
     )
-model.hparams.training_cache_rate = 0
+model.hparams.training_cache_rate=0
 
 # Define callbacks useful methods
 segmentation_to_diameter = SegmentationToDiameter(.5)
-get_input = lambda batch: batch['image']
+circlenet_to_segmentation = CircleNetToSegmentation()
+get_input=lambda batch: batch['image']
 get_gt_seg = lambda batch: batch['gt_lumen_processed_contour']
 get_gt_diam = lambda batch: batch['gt_lumen_processed_diameter']
 get_gt_landmarks = lambda batch: batch['gt_lumen_processed_landmarks']
-get_pred_seg = lambda batch, module: module(
-    batch
-    )[:, [1]]
+get_pred_seg = lambda batch, module: circlenet_to_segmentation(
+    module(
+        batch
+        )
+    )
 get_pred_diam = lambda batch, module: segmentation_to_diameter(
-    module(batch)[:, [1]]
+    circlenet_to_segmentation(module(batch))
 )
-get_pred_landmarks = lambda batch, module: module(batch)[1:3]
 slice_id_key = 'slice_id'
 spacing_key = 'image_meta_dict_spacing'
 

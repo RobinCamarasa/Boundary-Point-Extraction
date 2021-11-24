@@ -1,8 +1,10 @@
 """File containing geodesic trainers"""
+from pathlib import Path
 from typing import Any, Mapping, Tuple, List
 
 import monai
 import torch
+import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 from monai.transforms import (
@@ -10,7 +12,7 @@ from monai.transforms import (
     ToTensord
     )
 from monai.networks.nets import BasicUNet, UNet
-from monai.losses import DiceLoss
+from monai.losses import (DiceLoss, FocalLoss)
 from monai.utils import LossReduction
 
 from diameter_learning.plmodules import CarotidArteryChallengeModule
@@ -25,6 +27,7 @@ from diameter_learning.transforms import (
     CropImageCarotidChallenge, PopKeysd, LoadVoxelSized
     )
 from baselines.geodesic.transforms import TransformToGeodesicMapd
+from utilities.losses import (DC_CE_Focal, PartialLoss)
 
 
 class CarotidArteryChallengeGeodesicNet(
@@ -61,9 +64,8 @@ class CarotidArteryChallengeGeodesicNet(
             in_channels=1,
             out_channels=2
             )
-        # self.model.to(torch.float32)
-        self.loss = torch.nn.CrossEntropyLoss(reduction='none')
-        self.softmax = torch.nn.Softmax(dim=1).float()
+        self.loss = PartialLoss(DC_CE_Focal(2))
+        self.softmax = torch.nn.Softmax(dim=1)
 
 
     def forward(self, x) -> Tuple[
@@ -77,7 +79,7 @@ class CarotidArteryChallengeGeodesicNet(
         """
         # The unsqueeze is there to make the segmentation 3D
         # with a third dimension of size 1
-        return self.softmax(self.model(x['image']))
+        return self.model(x['image'])
 
     def compute_losses(
         self, batch, batch_idx
@@ -89,11 +91,11 @@ class CarotidArteryChallengeGeodesicNet(
         """
         prediction = self(batch)
         gt = batch['gt_lumen_processed_landmarks_geodesic'].long()
-        mask = gt[:, 0] + gt[:, 1]
-        loss = self.loss(prediction, gt[:, 0])
-        return torch.sum(
-                loss * mask
-            ) / torch.sum(mask)
+        gt = gt[:, 1] + 12 * (1 - (gt[:, 0] + gt[:, 1]))
+        loss = self.loss(
+            prediction, gt
+            )
+        return loss
 
     def training_step(self, batch, batch_idx) -> torch.Tensor:
         """Define the training step
@@ -115,7 +117,7 @@ class CarotidArteryChallengeGeodesicNet(
         """
         loss = self.compute_losses(batch, batch_idx)
         dice = 1 - DiceLoss(reduction=LossReduction.MEAN)(
-                self(batch)[:, [0]],
+                self.softmax(self(batch))[:, [1]],
                 batch['gt_lumen_processed_contour']
                 )
         self.log('validation_dice', dice, on_epoch=True)

@@ -3,6 +3,7 @@
 PP = PYTHONPATH="$(shell pwd)"
 TRAIN_OPT = -P "test_folds=[1]" -P "validation_folds=[2]" -P "seed=5"
 TEST_OPT = -P "run_id=324efe89aed94f7497a26e43d68329ab"
+EXP = circle_net
 
 data_zip:
 	rm -rf "data/care_ii_challenge"
@@ -30,20 +31,8 @@ delete_experiments: mlruns
 show_experiments: mlruns
 	mlflow ui
 
-method: data/care_ii_challenge/preprocessed
-	mlflow run --experiment-name method_training -e method_training ./ --no-conda $(TRAIN_OPT)
+training: data/care_ii_challenge/preprocessed
+	mlflow run --experiment-name $(EXP)_training -e $(EXP)_training ./ --no-conda $(TRAIN_OPT)
 
-method_evaluation: data/care_ii_challenge/preprocessed
-	mlflow run --experiment-name method_evaluation -e method_evaluation ./ --no-conda $(TEST_OPT)
-
-geodesic: data/care_ii_challenge/preprocessed
-	mlflow run --experiment-name geodesic_training -e geodesic_training ./ --no-conda $(TRAIN_OPT)
-
-geodesic_evaluation: data/care_ii_challenge/preprocessed
-	mlflow run --experiment-name geodesic_evaluation -e geodesic_evaluation ./ --no-conda $(TEST_OPT)
-
-full_supervision: data/care_ii_challenge/preprocessed
-	mlflow run --experiment-name full_supervision_training -e full_supervision_training ./ --no-conda $(TRAIN_OPT)
-
-full_supervision_evaluation: data/care_ii_challenge/preprocessed
-	mlflow run --experiment-name full_supervision_evaluation -e full_supervision_evaluation ./ --no-conda $(TEST_OPT)
+evaluation: data/care_ii_challenge/preprocessed
+	mlflow run --experiment-name $(EXP)_evaluation -e $(EXP)_evaluation ./ --no-conda $(TEST_OPT)

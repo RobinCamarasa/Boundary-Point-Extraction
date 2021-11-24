@@ -1,3 +1,3 @@
-[submodule "baselines/circle_net/CircleNet"]
-	path = baselines/circle_net/CircleNet
-	url = https://github.com/hrlblab/CircleNet
+[submodule "baselines/geodesic/InExtremIS"]
+	path = baselines/geodesic/InExtremIS
+	url = https://github.com/ReubenDo/InExtremIS
