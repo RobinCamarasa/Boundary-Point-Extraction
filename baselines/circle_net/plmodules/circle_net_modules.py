@@ -11,10 +11,12 @@ from monai.transforms import (
 from monai.networks.nets import BasicUNet, UNet
 from monai.losses import DiceLoss
 from monai.utils import LossReduction
-from models.losses import FocalLoss, FocalLoss_mask
 from diameter_learning.plmodules import CarotidArteryChallengeModule
 from baselines.circle_net.nets import BasicCircleNet
-from trains.circledet import CircleLoss
+from baselines.circle_net.transforms import (
+    TransformToCircleNetMaps, CircleNetToSegmentation
+    )
+from monai.losses import FocalLoss
 
 
 class CarotidArteryChallengeCircleNet(
@@ -30,16 +32,30 @@ class CarotidArteryChallengeCircleNet(
         super()._set_dataset()
         super()._set_transform_toolchain()
 
+        self.postprocess_transforms = [
+            TransformToCircleNetMaps(),
+            ToTensord(
+                [
+                    "image", "gt_lumen_processed_diameter",
+                    "gt_lumen_processed_landmarks",
+                    "radius", "heatmap", "radius_mask",
+                    "gt_lumen_processed_contour",
+                    ]
+                )
+            ]
+        self.to_segmentation_transform = CircleNetToSegmentation()
+
         # Define torch layers and modules
         self.model: torch.nn.Module = BasicCircleNet(
             spatial_dims=2,
             in_channels=1,
             out_channels_heatmap=1,
-            out_channels_radius=1,
-            out_channels_offset=2,
+            out_channels_radius=1
             )
         self.sigmoid = torch.nn.Sigmoid().float()
-        self.loss = CircleLoss(self.hparams)
+        self.relu = torch.nn.ReLU().float()
+        self.heatmap_loss = torch.nn.MSELoss().float()
+        self.radius_loss = torch.nn.L1Loss()
 
     def forward(self, x) -> Tuple[
             torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor
@@ -60,11 +76,30 @@ class CarotidArteryChallengeCircleNet(
         :param batch: Batch evaluated
         :param batch_idx: Id of the batch evaluated
         """
-        # output need the following keys:
-        # ['wh'], ['reg'], 
-        # batch need the following keys:
-        # ['reg_mask'], ['ind'], ['wh']
-        pass
+        prediction = self(batch)
+
+        # Compute heatmap loss
+        heatmap_prediction = prediction['heatmap']
+        ground_truth_heatmap = batch['heatmap']
+        heatmap_loss_value = self.heatmap_loss(
+            self.sigmoid(heatmap_prediction.float()),
+            ground_truth_heatmap.float()
+            )
+
+        # Compute radius loss
+        radius_prediction = (
+            self.relu(prediction['radius']) * batch['radius_mask']
+            ).sum(axis=(-1, -2))
+        ground_truth_radius = batch['radius'].sum(axis=(-1, -2))
+        radius_loss_value = self.radius_loss(
+            radius_prediction, ground_truth_radius
+            )
+
+        # Total loss value
+        total_loss_value = self.hparams.loss_radius_weighting *\
+            radius_loss_value + self.hparams.loss_heatmap_weighting *\
+            heatmap_loss_value
+        return total_loss_value, heatmap_loss_value, radius_loss_value
 
     def training_step(self, batch, batch_idx) -> torch.Tensor:
         """Define the training step
@@ -73,9 +108,13 @@ class CarotidArteryChallengeCircleNet(
         :param batch_idx: Id of the current training batch
         :return: The value of the loss
         """
-        loss = self.compute_losses(batch, batch_idx)
-        self.log('training_loss', loss.item(), on_epoch=True)
-        return loss
+        total_loss, heatmap_loss, radius_loss = self.compute_losses(
+            batch, batch_idx
+            )
+        self.log('training_heatmap_loss', heatmap_loss.item(), on_epoch=True)
+        self.log('training_radius_loss', radius_loss.item(), on_epoch=True)
+        self.log('training_loss', total_loss.item(), on_epoch=True)
+        return total_loss
 
     def validation_step(self, batch, batch_idx) -> DataLoader:
         """Define the validation step
@@ -84,9 +123,18 @@ class CarotidArteryChallengeCircleNet(
         :param batch_idx: Id of the current validation batch
         :return: The value of the loss
         """
-        loss = self.compute_losses(batch, batch_idx)
-        self.log('validation_loss', loss, on_epoch=True)
-        return loss
+        total_loss, heatmap_loss, radius_loss = self.compute_losses(
+            batch, batch_idx
+            )
+        dice = 1 - DiceLoss(reduction=LossReduction.MEAN)(
+            self.to_segmentation_transform(self(batch)),
+            batch['gt_lumen_processed_contour']
+            )
+        self.log('validation_dice', dice.item(), on_epoch=True)
+        self.log('validation_heatmap_loss', heatmap_loss.item(), on_epoch=True)
+        self.log('validation_radius_loss', radius_loss.item(), on_epoch=True)
+        self.log('validation_loss', total_loss.item(), on_epoch=True)
+        return total_loss
 
     def test_step(self, batch, batch_idx) -> DataLoader:
         """Define the test step
@@ -95,9 +143,13 @@ class CarotidArteryChallengeCircleNet(
         :param batch_idx: Id of the current test batch
         :return: The value of the loss
         """
-        loss = self.compute_losses(batch, batch_idx)
-        self.log('test_loss', loss, on_epoch=True)
-        return loss
+        total_loss, heatmap_loss, radius_loss = self.compute_losses(
+            batch, batch_idx
+            )
+        self.log('test_heatmap_loss', heatmap_loss.item(), on_epoch=True)
+        self.log('test_radius_loss', radius_loss.item(), on_epoch=True)
+        self.log('test_loss', total_loss.item(), on_epoch=True)
+        return total_loss
 
 
     @classmethod
@@ -110,33 +162,13 @@ class CarotidArteryChallengeCircleNet(
             CarotidArteryChallengeCircleNet, cls
             ).add_model_specific_args(parent_parser)
         parser = parent_parser.add_argument_group("CircleNetModule")
-
-        parser.add_argument('--mse_loss', type=str)
-        parser.add_argument('--cat_spec_wh', type=str, default='test')
-        parser.add_argument('--dense_wh', type=str, default='test')
-        parser.add_argument('--center_thresh', type=float, default=0.1)
-
-        parser.add_argument('--eval_oracle_hm', type=str, default=True)
-        parser.add_argument('--eval_oracle_offset', type=str, default=True)
-        parser.add_argument('--eval_oracle_wh', type=str, default=True)
-
-        parser.add_argument('--hm_weight', type=float, default=1)
-        parser.add_argument('--off_weight', type=float, default=1)
-        parser.add_argument('--wh_weight', type=float, default=0.1)
-
-        parser.add_argument('--norm_wh', type=str)
-        parser.add_argument('--num_stacks', type=int, default=1)
-        parser.add_argument('--reg_loss', type=str, default='l1')
-        parser.add_argument('--reg_offset', type=str, default='test')
-        parser.add_argument('--device', type=str, default='cuda')
+        parser.add_argument('--loss_heatmap_weighting', type=float)
+        parser.add_argument('--loss_radius_weighting', type=float)
+        parser.add_argument('--heatmap_sigma', type=str)
         return parent_parser
 
     def _process_args(self):
         try:
             super()._process_args()
-            self.hparams.mse_loss = eval(self.hparams.mse_loss)
-            self.hparams.dense_wh = eval(self.hparams.dense_wh)
-            self.hparams.norm_wh = eval(self.hparams.norm_wh)
-            self.hparams.cat_spec_wh = eval(self.hparams.cat_spec_wh)
         except:
             pass

@@ -1,0 +1,3 @@
+[submodule "baselines/geodesic/InExtremIS"]
+	path = baselines/geodesic/InExtremIS
+	url = https://github.com/ReubenDo/InExtremIS

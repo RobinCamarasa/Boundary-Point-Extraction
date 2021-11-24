@@ -69,5 +69,3 @@ class TransformToCircleNetMaps(MapTransform):
             ] = data[self.diameter_key][0][0] / 2
         data[self.radius_mask_key] = 1.0 * (data[self.radius_key] > 0)
         return data
-
-

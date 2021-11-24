@@ -10,7 +10,7 @@ from monai.transforms import (
     ToTensord
     )
 from monai.networks.nets import BasicUNet, UNet
-from monai.losses import DiceLoss
+from monai.losses import (FocalLoss, DiceLoss)
 from monai.utils import LossReduction
 
 from diameter_learning.plmodules import CarotidArteryChallengeModule
@@ -41,7 +41,9 @@ class CarotidArteryFullSupervisionNet(
             in_channels=1,
             out_channels=2
             )
-        self.loss = torch.nn.CrossEntropyLoss()
+        
+        self.loss = FocalLoss() if self.hparams.focal_loss \
+            else torch.nn.CrossEntropyLoss()
         self.softmax = torch.nn.Softmax(dim=1).float()
 
     def forward(self, x) -> Tuple[
@@ -118,11 +120,12 @@ class CarotidArteryFullSupervisionNet(
             CarotidArteryFullSupervisionNet, cls
             ).add_model_specific_args(parent_parser)
         parser = parent_parser.add_argument_group("VoxelWiseNet")
-        parser.add_argument('--tolerance', type=float)
+        parser.add_argument('--focal_loss', type=str, default=True)
         return parent_parser
 
     def _process_args(self):
         try:
             super()._process_args()
+            self.hparams.focal_loss = eval(self.hparams.focal_loss)
         except:
             pass

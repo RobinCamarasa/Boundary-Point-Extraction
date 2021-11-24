@@ -24,12 +24,14 @@ class CircleNetToSegmentation(Transform):
 
         # Transform heatmap as numpy
         heatmap = output[self.heatmap_key].detach().cpu().numpy()
-
+        radii = output[self.radius_key].detach().cpu().numpy()
         for i in range(segmentation.shape[0]):
             center_x, center_y = np.unravel_index(
                 np.argmax(heatmap[i, 0]), heatmap[i, 0].shape
                 )
-            radius = output[self.radius_key][i, 0, center_x, center_y]
-            rows_indices = disk((center_x, center_y), radius)
-            segmentation[i, 0][rows_indices] = 1
+            radius = radii[
+                i, 0, center_x, center_y
+                ]
+            indices = disk((center_x, center_y), radius)
+            segmentation[i, 0][indices] = 1
         return segmentation

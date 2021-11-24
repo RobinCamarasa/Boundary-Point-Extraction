@@ -17,7 +17,6 @@ class BasicCircleNet(BasicUNet):
         in_channels: int = 1,
         out_channels_heatmap: int = 1,
         out_channels_radius: int = 1,
-        out_channels_offset: int = 2,
         features: Sequence[int] = (32, 32, 64, 128, 256, 32),
         act: Union[str, tuple] = (
             "LeakyReLU", {"negative_slope": 0.1, "inplace": True}
