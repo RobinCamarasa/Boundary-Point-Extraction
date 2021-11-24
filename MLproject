@@ -38,7 +38,7 @@ entry_points:
         --model_sigma {model_sigma}
         --model_nb_radiuses {model_nb_radiuses}
         --model_moments {model_moments}
-        --loss_diameter_weighting {loss_consistency_weighting}
+        --loss_diameter_weighting {loss_diameter_weighting}
         --loss_consistency_weighting {loss_consistency_weighting}
         --loss_center_shift_weighting {loss_center_shift_weighting}
         --max_epochs {max_epochs}
