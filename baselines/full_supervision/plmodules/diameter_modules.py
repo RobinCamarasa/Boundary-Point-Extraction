@@ -42,8 +42,10 @@ class CarotidArteryFullSupervisionNet(
             out_channels=2
             )
         
-        self.loss = FocalLoss() if self.hparams.focal_loss \
-            else torch.nn.CrossEntropyLoss()
+        self.loss = torch.nn.CrossEntropyLoss()
+        # FocalLoss() if self.hparams.focal_loss \
+        # self.loss = FocalLoss() if self.hparams.focal_loss \
+        #     else torch.nn.CrossEntropyLoss()
         self.softmax = torch.nn.Softmax(dim=1).float()
 
     def forward(self, x) -> Tuple[
@@ -120,7 +122,7 @@ class CarotidArteryFullSupervisionNet(
             CarotidArteryFullSupervisionNet, cls
             ).add_model_specific_args(parent_parser)
         parser = parent_parser.add_argument_group("VoxelWiseNet")
-        parser.add_argument('--focal_loss', type=str, default=True)
+        # parser.add_argument('--focal_loss', type=str, default='True')
         return parent_parser
 
     def _process_args(self):

@@ -1,4 +1,5 @@
 from pathlib import Path
+import torch
 import argparse
 import pytorch_lightning as pl
 import mlflow
@@ -9,7 +10,7 @@ from diameter_learning.handlers import (
     HaussdorffCallback, AbsoluteDiameterError
     )
 from diameter_learning.settings import MLRUN_PATH
-from baselines.geodesic.plmodules import CarotidArteryChallengeGeodesicNet
+from baselines.full_supervision.plmodules import CarotidArteryFullSupervisionNet
 from diameter_learning.transforms import SegmentationToDiameter
 
 
@@ -30,7 +31,7 @@ experiment_path = list(MLRUN_PATH.glob(f'**/{params.run_id}'))[0]
 checkpoint_path = list(
     experiment_path.glob(f'**/*{params.metric}*.ckpt')
     )[0]
-model = CarotidArteryChallengeGeodesicNet.load_from_checkpoint(
+model = CarotidArteryFullSupervisionNet.load_from_checkpoint(
     str(checkpoint_path)
     )
 model.hparams.training_cache_rate=0
@@ -41,9 +42,7 @@ get_input=lambda batch: batch['image']
 get_gt_seg = lambda batch: batch['gt_lumen_processed_contour']
 get_gt_diam = lambda batch: batch['gt_lumen_processed_diameter']
 get_gt_landmarks = lambda batch: batch['gt_lumen_processed_landmarks']
-get_pred_seg = lambda batch, module: module(
-    batch
-    )[:, [1]]
+get_pred_seg = lambda batch, module: module(batch)[:, [1]]
 get_pred_diam = lambda batch, module: segmentation_to_diameter(
     module(batch)[:, [1]]
 )

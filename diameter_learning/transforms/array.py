@@ -127,18 +127,20 @@ class SegmentationToDiameter(Transform):
                 (x_matrix - np.transpose(x_matrix))**2 +\
                 (y_matrix - np.transpose(y_matrix))**2
             )
-            
-            point_1, point_2 = np.unravel_index(
-                np.argmax(distance), distance.shape
-                )
-            diameters[batch, feature] = np.linalg.norm(
-                    np.array(
-                        [
-                            x_indices[point_1] - x_indices[point_2],
-                            y_indices[point_1] - y_indices[point_2]
-                            ]
-                        )
+            try:
+                point_1, point_2 = np.unravel_index(
+                    np.argmax(distance), distance.shape
                     )
+                diameters[batch, feature] = np.linalg.norm(
+                        np.array(
+                            [
+                                x_indices[point_1] - x_indices[point_2],
+                                y_indices[point_1] - y_indices[point_2]
+                                ]
+                            )
+                        )
+            except Exception as e:
+                diameters[batch, feature] = 0
         return torch.from_numpy(diameters).to(
             segmentation.device
             )
