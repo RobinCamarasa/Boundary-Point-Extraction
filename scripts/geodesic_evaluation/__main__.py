@@ -2,6 +2,7 @@ from pathlib import Path
 import argparse
 import pytorch_lightning as pl
 import mlflow
+import torch
 from torch.utils.data import DataLoader
 from diameter_learning.handlers import (
     RelativeDiameterError, DiceCallback, ImageVisualizer,
@@ -41,13 +42,12 @@ get_input = lambda batch: batch['image']
 get_gt_seg = lambda batch: batch['gt_lumen_processed_contour']
 get_gt_diam = lambda batch: batch['gt_lumen_processed_diameter']
 get_gt_landmarks = lambda batch: batch['gt_lumen_processed_landmarks']
-get_pred_seg = lambda batch, module: module(
+get_pred_seg = lambda batch, module: torch.nn.Softmax(dim=1)(module(
     batch
-    )[:, [1]]
+    ))[:, [1]]
 get_pred_diam = lambda batch, module: segmentation_to_diameter(
-    module(batch)[:, [1]]
+    get_pred_seg(batch, module)
 )
-get_pred_landmarks = lambda batch, module: module(batch)[1:3]
 slice_id_key = 'slice_id'
 spacing_key = 'image_meta_dict_spacing'
 

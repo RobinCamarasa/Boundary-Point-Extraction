@@ -122,7 +122,6 @@ class DiceCallback(MetricCallback):
             get_pred=get_pred,
             slice_id_key=slice_id_key,
             )
-
     def compute_metric(self, pred, gt, batch):
         return 1 - DiceLoss(reduction=LossReduction.MEAN)(
             pred, gt
