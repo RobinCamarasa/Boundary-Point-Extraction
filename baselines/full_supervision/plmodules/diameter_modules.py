@@ -43,9 +43,6 @@ class CarotidArteryFullSupervisionNet(
             )
         
         self.loss = torch.nn.CrossEntropyLoss()
-        # FocalLoss() if self.hparams.focal_loss \
-        # self.loss = FocalLoss() if self.hparams.focal_loss \
-        #     else torch.nn.CrossEntropyLoss()
         self.softmax = torch.nn.Softmax(dim=1).float()
 
     def forward(self, x) -> Tuple[
