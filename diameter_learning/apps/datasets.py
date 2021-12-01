@@ -50,7 +50,7 @@ class CarotidChallengeDataset(CacheDataset):
 
     def _generate_dataset(self) -> List[Mapping[str, str]]:
         # Get the patient folders of the considered folds
-        all_patient_folders: List[Path] = list(self.root_dir.glob('*'))
+        all_patient_folders: List[Path] = sorted(list(self.root_dir.glob('*')))
         random.Random(self.seed).shuffle(all_patient_folders)
         patient_folders: List[Path] = []
         num_patient_per_fold: int = len(all_patient_folders) // self.num_fold
@@ -71,7 +71,7 @@ class CarotidChallengeDataset(CacheDataset):
             annotation_files += [
                 annotation_file
                 for annotation_file in
-                list(patient_folder.glob('**/*.json'))
+                sorted(list(patient_folder.glob('**/*.json')))
                 if annotation_file.stem.split('_annotation')[0]
                 in list(self.annotations)
                 ]
