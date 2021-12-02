@@ -9,12 +9,17 @@ experiment_folder = Path(MLRUN_PATH / f'{id_}')
 runs = list(experiment_folder.glob('[!m]*'))
 assert len(runs) == 12
 
+# Get the metrics name
 metrics = [
     metric_results.parent.stem
     for metric_results in runs[0].glob('**/result.csv')
     ]
+
+# Loop over the metrics
 for metric in metrics:
     results = pd.DataFrame()
+
+    # Loop over the run
     for i, tmp in enumerate(runs):
         result = pd.read_csv(
             tmp / 'artifacts' / metric / 'result.csv'
@@ -27,3 +32,8 @@ for metric in metrics:
     for i, row in results.iterrows():
         values.append(row.sum() / row.count())
     results['values'] = values
+    results['slice_id'] = results.index
+    results['patient_id'] = results['slice_id'].apply(
+        lambda x: '_'.join(x.split('_')[:2])
+        )
+    aggregation = results.groupby('patient_id').agg(['mean', 'std'])
