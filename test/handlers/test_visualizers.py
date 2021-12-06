@@ -79,8 +79,8 @@ def test_segmentation_visualizer():
             '0_P723_U_slice_126_internal_right',
             '0_P723_U_slice_130_internal_right',
             '0_P723_U_slice_135_internal_right',
-            '0_P723_U_slice_184_internal_left',
-            '0_P723_U_slice_249_internal_left'
+            '0_P723_U_slice_140_internal_right',
+            '0_P723_U_slice_145_internal_right'
         ]:
             assert (
                 artifact_path / 'SegmentationVisualizer' / f'{i}.png'
@@ -153,8 +153,8 @@ def test_ground_truth_visualizer():
             '0_P723_U_slice_126_internal_right',
             '0_P723_U_slice_130_internal_right',
             '0_P723_U_slice_135_internal_right',
-            '0_P723_U_slice_184_internal_left',
-            '0_P723_U_slice_249_internal_left'
+            '0_P723_U_slice_140_internal_right',
+            '0_P723_U_slice_145_internal_right'
         ]:
             assert (
                 artifact_path / 'GroundTruthVisualizer' / f'{i}.png'
@@ -225,11 +225,11 @@ def test_image_visualizer():
         mlflow.pytorch.autolog()
         trainer.test(model)
         for i in [
-                '0_P723_U_slice_126_internal_right',
-                '0_P723_U_slice_130_internal_right',
-                '0_P723_U_slice_135_internal_right',
-                '0_P723_U_slice_184_internal_left',
-                '0_P723_U_slice_249_internal_left'
+            '0_P723_U_slice_126_internal_right',
+            '0_P723_U_slice_130_internal_right',
+            '0_P723_U_slice_135_internal_right',
+            '0_P723_U_slice_140_internal_right',
+            '0_P723_U_slice_145_internal_right'
         ]:
 
             assert (
@@ -304,8 +304,8 @@ def test_landmarks_visualizer():
             '0_P723_U_slice_126_internal_right',
             '0_P723_U_slice_130_internal_right',
             '0_P723_U_slice_135_internal_right',
-            '0_P723_U_slice_184_internal_left',
-            '0_P723_U_slice_249_internal_left'
+            '0_P723_U_slice_140_internal_right',
+            '0_P723_U_slice_145_internal_right'
         ]:
             assert (
                 artifact_path / 'LandmarksVisualizer' / f'{i}.png'

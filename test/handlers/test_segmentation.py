@@ -69,8 +69,8 @@ def test_segmentation_saver():
             '0_P723_U_slice_126_internal_right',
             '0_P723_U_slice_130_internal_right',
             '0_P723_U_slice_135_internal_right',
-            '0_P723_U_slice_184_internal_left',
-            '0_P723_U_slice_249_internal_left'
+            '0_P723_U_slice_140_internal_right',
+            '0_P723_U_slice_145_internal_right'
         ]:
             assert (
                 artifact_path / 'SegmentationSaver' / f'{i}.npy'

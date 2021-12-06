@@ -94,10 +94,9 @@ class SegmentationVisualizer(VisualizerCallback):
         plt.clf()
         plt.axis('off')
         plt.imshow(np.transpose(image), cmap='gray')
-        segmentation[np.where(segmentation < .2)] = np.nan
         plt.imshow(
             np.transpose(segmentation), cmap=cmap,
-            vmin=0, vmax=1, alpha=.8
+            vmin=0, vmax=1, alpha=segmentation
             )
 
     def process_batch(
