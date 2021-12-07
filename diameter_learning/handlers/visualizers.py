@@ -96,7 +96,7 @@ class SegmentationVisualizer(VisualizerCallback):
         plt.imshow(np.transpose(image), cmap='gray')
         plt.imshow(
             np.transpose(segmentation), cmap=cmap,
-            vmin=0, vmax=1, alpha=segmentation
+            vmin=0, vmax=1, alpha=np.transpose(segmentation)
             )
 
     def process_batch(
