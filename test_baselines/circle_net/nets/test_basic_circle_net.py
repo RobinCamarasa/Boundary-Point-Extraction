@@ -11,7 +11,6 @@ def test_basic_circle_net():
         in_channels=5,
         out_channels_heatmap=1,
         out_channels_radius=3,
-        out_channels_offset=2,
         )
     tensor = torch.from_numpy(
         np.arange(3 * 5 * 32 * 32).reshape(

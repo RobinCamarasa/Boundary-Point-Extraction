@@ -73,6 +73,11 @@ def test_geodesic_module_training_step():
     module.log = lambda x, y, on_epoch: None
 
     example_batch = next(iter(module.train_dataloader()))
+    example_batch['gt_lumen_processed_landmarks_geodesic'] = example_batch[
+        'gt_lumen_processed_landmarks_geodesic'
+        ].cuda()
+    example_batch['image'] = example_batch['image'].cuda()
+    module.cuda()
     loss = module.training_step(example_batch, 0)
     assert loss.shape == tuple()
 
@@ -107,6 +112,14 @@ def test_geodesic_module_validation_step():
     module.log = lambda x, y, on_epoch: None
 
     example_batch = next(iter(module.val_dataloader()))
+    module.cuda()
+    example_batch['gt_lumen_processed_landmarks_geodesic'] = example_batch[
+        'gt_lumen_processed_landmarks_geodesic'
+        ].cuda()
+    example_batch['gt_lumen_processed_contour'] = example_batch[
+        'gt_lumen_processed_contour'
+        ].cuda()
+    example_batch['image'] = example_batch['image'].cuda()
     loss = module.validation_step(example_batch, 0)
     assert loss.shape == tuple()
 
@@ -141,6 +154,14 @@ def test_geodesic_module_test_step():
     module.log = lambda x, y, on_epoch: None
 
     example_batch = next(iter(module.test_dataloader()))
+    example_batch['gt_lumen_processed_landmarks_geodesic'] = example_batch[
+        'gt_lumen_processed_landmarks_geodesic'
+        ].cuda()
+    example_batch['gt_lumen_processed_contour'] = example_batch[
+        'gt_lumen_processed_contour'
+        ].cuda()
+    example_batch['image'] = example_batch['image'].cuda()
+    module.cuda()
     loss = module.test_step(example_batch, 0)
     assert loss.shape == tuple()
 
