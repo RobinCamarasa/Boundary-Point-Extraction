@@ -9,6 +9,7 @@ from diameter_learning.handlers import (
     SegmentationVisualizer, LandmarksVisualizer, GroundTruthVisualizer,
     HaussdorffCallback, AbsoluteDiameterError
     )
+from monai.transforms import KeepLargestConnectedComponent
 from diameter_learning.settings import MLRUN_PATH
 from baselines.geodesic.plmodules import CarotidArteryChallengeGeodesicNet
 from diameter_learning.transforms import SegmentationToDiameter
@@ -36,15 +37,23 @@ model = CarotidArteryChallengeGeodesicNet.load_from_checkpoint(
     )
 model.hparams.training_cache_rate = 0
 
+def get_pred_seg(batch, module):
+    segmentation = torch.nn.Softmax(dim=1)(module(
+        batch
+        ))[0, [1]]
+    segmentation = torch.unsqueeze(
+        KeepLargestConnectedComponent(1)(segmentation > 0.5), 0
+        )
+    return segmentation
+
+
 # Define callbacks useful methods
 segmentation_to_diameter = SegmentationToDiameter(.5)
 get_input = lambda batch: batch['image']
 get_gt_seg = lambda batch: batch['gt_lumen_processed_contour']
 get_gt_diam = lambda batch: batch['gt_lumen_processed_diameter']
 get_gt_landmarks = lambda batch: batch['gt_lumen_processed_landmarks']
-get_pred_seg = lambda batch, module: torch.nn.Softmax(dim=1)(module(
-    batch
-    ))[:, [1]]
+
 get_pred_diam = lambda batch, module: segmentation_to_diameter(
     get_pred_seg(batch, module)
 )

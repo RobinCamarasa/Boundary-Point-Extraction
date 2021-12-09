@@ -4,6 +4,7 @@ import argparse
 import pytorch_lightning as pl
 import mlflow
 from torch.utils.data import DataLoader
+from monai.transforms import KeepLargestConnectedComponent
 from diameter_learning.handlers import (
     RelativeDiameterError, DiceCallback, ImageVisualizer,
     SegmentationVisualizer, LandmarksVisualizer, GroundTruthVisualizer,
@@ -36,15 +37,29 @@ model = CarotidArteryFullSupervisionNet.load_from_checkpoint(
     )
 model.hparams.training_cache_rate=0
 
+# Change post processing
+def post_process(x):
+    """Compute the segmentation, the center of mass, the radiuses
+    and the diameter
+
+    :return: The segmentation, the center of mass, the radiuses
+        and the diameter
+    """
+    segmentation = model(x)[0]
+    segmentation = torch.unsqueeze(
+        KeepLargestConnectedComponent(1)(segmentation > 0.5), 0
+        )
+    return segmentation
+
 # Define callbacks useful methods
 segmentation_to_diameter = SegmentationToDiameter(.5)
 get_input=lambda batch: batch['image']
 get_gt_seg = lambda batch: batch['gt_lumen_processed_contour']
 get_gt_diam = lambda batch: batch['gt_lumen_processed_diameter']
 get_gt_landmarks = lambda batch: batch['gt_lumen_processed_landmarks']
-get_pred_seg = lambda batch, module: module(batch)[:, [1]]
+get_pred_seg = lambda batch, module: post_process(batch)[:, [1]]
 get_pred_diam = lambda batch, module: segmentation_to_diameter(
-    module(batch)[:, [1]]
+    post_process(batch)[:, [1]]
 )
 slice_id_key = 'slice_id'
 spacing_key = 'image_meta_dict_spacing'

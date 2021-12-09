@@ -2,7 +2,9 @@ from pathlib import Path
 import argparse
 import pytorch_lightning as pl
 import mlflow
+import torch
 from torch.utils.data import DataLoader
+from monai.transforms import KeepLargestConnectedComponent
 from diameter_learning.handlers import (
     RelativeDiameterError, DiceCallback, ImageVisualizer,
     SegmentationVisualizer, LandmarksVisualizer, GroundTruthVisualizer,
@@ -34,22 +36,42 @@ model = CarotidArteryChallengeDiameterModule.load_from_checkpoint(
     )
 model.hparams.training_cache_rate=0
 
+# Change post processing
+def post_process(x):
+    """Compute the segmentation, the center of mass, the radiuses
+    and the diameter
+
+    :return: The segmentation, the center of mass, the radiuses
+        and the diameter
+    """
+    segmentation = model.sigmoid(model.model(x['image']))[0]
+    segmentation = torch.unsqueeze(
+        KeepLargestConnectedComponent(1)(segmentation > 0.5), -1
+        ).unsqueeze(0)
+    center_of_mass = model.center_of_mass_extractor(
+        segmentation
+        )
+    radiuses = model.gaussian_radius_extractor(
+        segmentation, center_of_mass
+        )
+    diameter = model.vanilla_diameter_extractor(
+        torch.mean(radiuses, 0)
+        )
+    return segmentation, center_of_mass, radiuses, diameter
+
 # Define callbacks useful methods
 get_input=lambda batch: batch['image']
 
 get_gt_seg = lambda batch: batch['gt_lumen_processed_contour']
 get_gt_diam = lambda batch: batch['gt_lumen_processed_diameter']
 get_gt_landmarks = lambda batch: batch['gt_lumen_processed_landmarks']
-get_pred_seg = lambda batch, module: module(
+get_pred_seg = lambda batch, module: post_process(
     batch
     )[0][:, :, :, :, 0]
-get_pred_diam = lambda batch, module: module(
+get_pred_diam = lambda batch, module: post_process(
     batch
     )[3][:, :, 0]
-get_pred_diam = lambda batch, module: module(
-    batch
-    )[3][:, :, 0]
-get_pred_landmarks = lambda batch, module: module(batch)[1:3]
+get_pred_landmarks = lambda batch, module: post_process(batch)[1:3]
 slice_id_key = 'slice_id'
 spacing_key = 'image_meta_dict_spacing'
 
