@@ -3,6 +3,7 @@
 PP = PYTHONPATH="$(shell pwd)"
 TRAIN_OPT = -P "test_folds=[1]" -P "validation_folds=[2]" -P "seed=5"
 TEST_OPT = -P "run_id=324efe89aed94f7497a26e43d68329ab"
+AGG_OPT = -P "experiment_id=5"
 EXP = circle_net
 EXP_NAME = circle_net
 
@@ -37,3 +38,6 @@ training: data/care_ii_challenge/preprocessed
 
 evaluation: data/care_ii_challenge/preprocessed
 	mlflow run --experiment-name $(EXP_NAME)_evaluation -e $(EXP)_evaluation ./ --no-conda $(TEST_OPT)
+
+aggregate:
+	mlflow run --experiment-name aggregate -e aggregate ./ --no-conda $(AGG_OPT)
