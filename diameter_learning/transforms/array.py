@@ -71,14 +71,14 @@ class ControlPointPostprocess(Transform):
                 redundant_radiuses[nb, nf, :, nz] * np.sin(angles)
             coordinates[nb, nf, :, 0, nz] = x[:radiuses.shape[-2]]
             coordinates[nb, nf, :, 1, nz] = y[:radiuses.shape[-2]]
-            # Evaluate the spline the coordinates
-            tck, _ = interpolate.splprep([x, y], s=0)
-            x_contour, y_contour = interpolate.splev(
-                np.linspace(0, 1, self.number_of_points), tck
-                )
-            # The order seems inversed because r means row and therefore
-            # correspond to x coordinates (same remark for y)
             try:
+                # Evaluate the spline the coordinates
+                tck, _ = interpolate.splprep([x, y], s=0)
+                x_contour, y_contour = interpolate.splev(
+                    np.linspace(0, 1, self.number_of_points), tck
+                    )
+                # The order seems inversed because r means row and therefore
+                # correspond to x coordinates (same remark for y)
                 rows, columns = polygon(r=y_contour, c=x_contour)
                 segmentations[nb, nf, rows, columns, nz] = 1
                 contours[nb, nf, :, 0, nz] = x_contour
