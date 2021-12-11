@@ -8,12 +8,37 @@ import pandas as pd
 from diameter_learning.settings import MLRUN_PATH
 
 
+def get_training_param(run_, param):
+    """Get a parameter of the considered run
+
+    :param run_: Run of the experiment
+    :param run_: Considered run
+    :return: The experiment name
+    """
+    with (run_ / 'params' / 'run_id').open('r') as handle:
+        run__ = handle.readline()
+    training_exp = list(MLRUN_PATH.glob(f'*/{run__}/meta.yaml'))[0].parent
+    with (training_exp / 'params' / param).open('r') as handle:
+        return handle.readline()
+
+
+def get_experiment_name(experiment_folder):
+    """Get the name of the experiment from an experiment folder
+
+    :param experiment_folder: Folder of the experiment
+    :return: The experiment name
+    """
+    with (experiment_folder / 'meta.yaml').open('r') as handle:
+        return [line[6:] for line in handle.readlines() if 'name:' in line][0]
+
+
 parser = argparse.ArgumentParser(
 	description='Analyse experiment'
 	)
 parser.add_argument('--experiment_id', type=int)
 params = parser.parse_args()
 experiment_folder = Path(MLRUN_PATH / f'{params.experiment_id}')
+mlflow.set_tag('experiment', get_experiment_name(experiment_folder))
 runs = list(experiment_folder.glob('[!m]*'))
 assert len(runs) == 12
 
@@ -26,60 +51,23 @@ metrics = [
     metric_results.parent.stem
     for metric_results in runs[0].glob('**/result.csv')
     ]
-dataframes = {metric: None  for metric in metrics}
+dataframes = pd.DataFrame()
 
 # Loop over the metrics
 for metric in metrics:
-    results = pd.DataFrame()
+    results = {f'seed_{i}': pd.DataFrame() for i in range(3)}
 
     # Loop over the run
-    for i, tmp in enumerate(runs):
+    for i, run_ in enumerate(runs):
+        seed = get_training_param(run_, 'seed')
         result = pd.read_csv(
-            tmp / 'artifacts' / metric / 'result.csv'
+            run_ / 'artifacts' / metric / 'result.csv'
             ).set_index('slice_id')
-        result = result.rename(columns={'values': f'values_{tmp.stem}'})
-        results = results.join(
-            result, how='outer',
+        result = result.rename(columns={'values': f'values_{run_.stem}'})
+        results[f'seed_{seed}'] = results[f'seed_{seed}'].join(
+            result, how='outer'
             )
-    values = []
-    for i, row in results.iterrows():
-        value = row.sum() / row.count()
-        if value != np.inf:
-            values.append(value)
-        else:
-            values.append(np.nan)
-    results['values'] = values
-    dataframes[metric] = results[['values']]
+    for key in results:
+        dataframes[f'{metric.lower()}_{key}'] =  results[key][list(results[key])].sum(axis=1)
 
-# Filter empty segmentations
-dataframes['HaussdorffCallback'] = dataframes['HaussdorffCallback'][
-        dataframes['HaussdorffCallback']['values'].notnull()
-        ]
-mlflow.log_metric(
-        'missing',
-        100 * (
-                1 - dataframes['HaussdorffCallback'].shape[0] /\
-                dataframes['DiceCallback'].shape[0]
-            )
-        )
-
-# Loop over dataframes dictionnary
-for key, dataframe in dataframes.items():
-    dataframe['slice_id'] = dataframe.index
-    dataframe['patient_id'] = dataframe['slice_id'].apply(
-        lambda x: '_'.join(x.split('_')[:2])
-        )
-    if not 'Dice' in key and not 'Haussdorff' in key:
-        # Filter dataframe
-        dataframe = dataframe[
-            dataframe.index.isin(dataframes['HaussdorffCallback'].index)
-            ]
-    dataframe[['values']].to_csv(
-        artifact_path / f'result_{key}.csv'
-        )
-    aggregation = dataframe.groupby('patient_id').mean()
-    aggregation[['values']].to_csv(
-        artifact_path / f'aggregated_{key}.csv'
-        )
-    mlflow.log_metric(f'{key}_mean', aggregation['values'].mean())
-    mlflow.log_metric(f'{key}_std', aggregation['values'].std())
+dataframes.to_csv(artifact_path / 'metrics.csv')

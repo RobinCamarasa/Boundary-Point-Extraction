@@ -40,4 +40,4 @@ evaluation: data/care_ii_challenge/preprocessed
 	mlflow run --experiment-name $(EXP_NAME)_evaluation -e $(EXP)_evaluation ./ --no-conda $(TEST_OPT)
 
 aggregate:
-	mlflow run --experiment-name aggregate -e aggregate ./ --no-conda $(AGG_OPT)
+	mlflow run --experiment-name $(EXP_NAME) -e aggregate ./ --no-conda $(AGG_OPT)
