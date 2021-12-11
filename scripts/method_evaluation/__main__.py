@@ -57,6 +57,8 @@ def post_process(x):
     diameter = model.vanilla_diameter_extractor(
         torch.mean(radiuses, 0)
         )
+    if segmentation.sum() == 0:
+        diameter[0, 0, 0] = 0
     return segmentation, center_of_mass, radiuses, diameter
 
 # Define callbacks useful methods
