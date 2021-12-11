@@ -144,7 +144,7 @@ class SegmentationToDiameter(Transform):
                         )
             except Exception as e:
                 # Treate the case with no segmentation
-                diameters[batch, feature] = np.nan
+                diameters[batch, feature] = 0
         return torch.from_numpy(diameters).to(
             segmentation.device
             )
